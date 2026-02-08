@@ -706,6 +706,12 @@
     let offsetY = 0; // in device px
     let canvasBgColor = "#bfbfbf";
 
+    // Reference image
+    let referenceCels = []; 
+    let referenceOpacity = 0.4;
+    let referenceVisible = true;
+    let refDragState = null;
+
     // Transparency hold
     let transparencyHoldEnabled = false;
 
@@ -3053,6 +3059,24 @@
         ctx.fillRect(0, 0, contentW, contentH);
       }
 
+      if (withBg && referenceVisible) {
+        let activeRef = null;
+        for (let i = F; i >= 0; i--) {
+          const entry = referenceCels[i];
+          if (entry) {
+            activeRef = entry;
+            break;
+          }
+        }
+
+        if (activeRef && activeRef instanceof HTMLImageElement) {
+          ctx.save();
+          ctx.globalAlpha = referenceOpacity;
+          ctx.drawImage(activeRef, 0, 0, contentW, contentH);
+          ctx.restore();
+        }
+      }
+
       if (hasCel(F)) {
         drawExactCel(ctx, F);
       } else if (holdPrevWhenEmpty) {
@@ -4227,6 +4251,15 @@
       if (!hasTimeline) return;
 
       totalFrames = fps * seconds;
+
+      if (referenceCels.length < totalFrames) {
+        const oldLen = referenceCels.length;
+        referenceCels.length = totalFrames;
+        referenceCels.fill(null, oldLen);
+      } else if (referenceCels.length > totalFrames) {
+        referenceCels.length = totalFrames;
+      }
+
       // ✅ Resize ALL sublayer frame arrays to match new totalFrames
       for (const layer of layers) {
         if (!layer?.sublayers || !layer?.suborder) continue;
@@ -4273,6 +4306,58 @@
         playRow.appendChild(td);
       }
       timelineTable.appendChild(playRow);
+
+      const refRow = document.createElement("tr");
+      refRow.className = "ref-row";
+      const refTh = document.createElement("th");
+      refTh.className = "sticky";
+      refTh.textContent = "Reference";
+      refTh.style.fontSize = "11px";
+      refRow.appendChild(refTh);
+
+      for (let i = 0; i < totalFrames; i++) {
+        const td = document.createElement("td");
+        td.dataset.index = String(i);
+
+        const item = referenceCels[i];
+
+        if (item && item instanceof HTMLImageElement) {
+          let span = 1;
+          for (let j = i + 1; j < totalFrames; j++) {
+            if (referenceCels[j] !== null) break;
+            span++;
+          }
+
+          const block = document.createElement("div");
+          block.className = "ref-block";
+          block.textContent = item._filename || "Reference";
+          block.title = item._filename || "Reference Image";
+          block.style.width = `calc(${span} * var(--frame-w, 24px) - 1px)`;
+          block.dataset.startIndex = i;
+          block.dataset.span = span;
+
+          const hL = document.createElement("div");
+          hL.className = "ref-handle left";
+          hL.dataset.action = "resize-left";
+          
+          const hR = document.createElement("div");
+          hR.className = "ref-handle right";
+          hR.dataset.action = "resize-right";
+
+          block.appendChild(hL);
+          block.appendChild(hR);
+          td.appendChild(block);
+        }
+        
+        // Visual indicator for "Empty/Stop" markers (Optional, debugging mostly)
+        //if (item && item.empty) {
+        //   td.style.background = "rgba(255, 255, 255, 0.05)";
+        //   td.title = "Reference Cleared Here";
+        //}
+
+        refRow.appendChild(td);
+      }
+      timelineTable.appendChild(refRow);
 
       // Anim row
       const tr = document.createElement("tr");
@@ -9031,6 +9116,27 @@
         });
       }
 
+      const refExportMap = {};
+      
+      for (let i = 0; i < totalFrames; i++) {
+        const item = referenceCels[i];
+        if (!item) continue; 
+
+        if (item.empty) {
+          refExportMap[i] = "EMPTY";
+        } else if (item instanceof HTMLImageElement) {
+          try {
+            const tmpC = document.createElement("canvas");
+            tmpC.width = item.naturalWidth || item.width;
+            tmpC.height = item.naturalHeight || item.height;
+            tmpC.getContext("2d").drawImage(item, 0, 0);
+            refExportMap[i] = tmpC.toDataURL("image/png");
+          } catch (e) {
+            console.warn("Skipping tainted ref", e);
+          }
+        }
+      }
+
       const data = {
         version: 2,
 
@@ -9070,6 +9176,11 @@
         activeSubColor: Array.isArray(activeSubColor) ? activeSubColor.slice() : activeSubColor,
 
         oklchDefault,
+
+        // Reference images
+        referenceLayerMap: refExportMap,
+        referenceOpacity: (typeof referenceOpacity !== "undefined") ? referenceOpacity : 0.4,
+        referenceVisible: (typeof referenceVisible !== "undefined") ? referenceVisible : true,
 
         // drawings
         layers: outLayers
@@ -9145,6 +9256,46 @@
           playSnapped = !!data.playSnapped;
           keepOnionWhilePlaying = !!data.keepOnionWhilePlaying;
           keepTransWhilePlaying = !!data.keepTransWhilePlaying;
+
+          if (typeof data.referenceOpacity === "number") {
+            referenceOpacity = Math.max(0, Math.min(1, data.referenceOpacity));
+            const opInp = document.getElementById("refOpacity");
+            if (opInp) opInp.value = Math.round(referenceOpacity * 100);
+          }
+
+          if (typeof data.referenceVisible === "boolean") {
+            referenceVisible = data.referenceVisible;
+            const refTog = document.getElementById("refToggle");
+            if (refTog) refTog.checked = referenceVisible;
+          }
+
+          referenceCels = new Array(totalFrames).fill(null);
+
+          // Handle Legacy (single image)
+          if (data.referenceDataUrl) {
+             const img = new Image();
+             img.onload = () => { referenceCels[0] = img; try{renderAll();}catch{} };
+             img.src = data.referenceDataUrl;
+          }
+
+          // Handle New (timeline map)
+          if (data.referenceLayerMap) {
+            for (const [fIndex, val] of Object.entries(data.referenceLayerMap)) {
+              const idx = parseInt(fIndex, 10);
+              if (idx < 0 || idx >= totalFrames) continue;
+
+              if (val === "EMPTY") {
+                referenceCels[idx] = { empty: true };
+              } else {
+                const img = new Image();
+                img.onload = () => { 
+                  referenceCels[idx] = img; 
+                  if (currentFrame === idx) try{renderAll();}catch{} 
+                };
+                img.src = val;
+              }
+            }
+          }
 
           if (data.oklchDefault && typeof data.oklchDefault === "object") {
             const L = clamp(parseFloat(data.oklchDefault.L) || 0, 0, 100);
@@ -10151,7 +10302,138 @@
       stageViewport.addEventListener("pointercancel", endPointer, { capture:true, passive:false });
     }
 
-  
+function initReferenceTimelineInteraction() {
+      const scroll = document.getElementById("timelineScroll");
+
+      function getFrameFromX(x) {
+        const playRow = document.querySelector("tr.playhead-row");
+        if (!playRow) return 0;
+        const rect = playRow.getBoundingClientRect();
+        const firstCell = playRow.children[1];
+        const cellW = firstCell ? firstCell.getBoundingClientRect().width : 24; 
+        const headerW = playRow.children[0].offsetWidth;
+        const scrollLeft = scroll.scrollLeft;
+        const contentX = x - rect.left - headerW + scrollLeft;
+        return Math.floor(contentX / cellW);
+      }
+
+      function getCellWidthPx() {
+        const playRow = document.querySelector("tr.playhead-row");
+        const c = playRow?.children[1];
+        return c ? c.getBoundingClientRect().width : 24;
+      }
+
+      scroll.addEventListener("pointerdown", (e) => {
+        const handle = e.target.closest(".ref-handle");
+        const block = e.target.closest(".ref-block");
+
+        if (!block) return; 
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const startIdx = parseInt(block.dataset.startIndex, 10);
+        const span = parseInt(block.dataset.span, 10);
+        const clickFrame = getFrameFromX(e.clientX);
+
+        let mode = "move";
+        if (handle) {
+          mode = handle.dataset.action === "resize-left" ? "left" : "right";
+        }
+
+        refDragState = {
+          mode,
+          originalStart: startIdx,
+          originalSpan: span,
+          clickFrame: clickFrame,
+          refItem: referenceCels[startIdx],
+          domElement: block,
+          cellW: getCellWidthPx()
+        };
+
+        block.classList.add("dragging");
+        try { scroll.setPointerCapture(e.pointerId); } catch {}
+      });
+
+      scroll.addEventListener("pointermove", (e) => {
+        if (!refDragState) return;
+        e.preventDefault();
+
+        const curFrame = clamp(getFrameFromX(e.clientX), 0, totalFrames - 1);
+        const delta = curFrame - refDragState.clickFrame;
+        const { mode, originalSpan, cellW, domElement } = refDragState;
+
+        if (mode === "move") {
+          domElement.style.transform = `translateX(${delta * cellW}px)`;
+        } 
+        else if (mode === "right") {
+          const newSpan = Math.max(1, originalSpan + delta);
+          domElement.style.width = `calc(${newSpan} * ${cellW}px - 1px)`;
+        } 
+        else if (mode === "left") {
+          const validDelta = Math.min(delta, originalSpan - 1);
+          const newSpan = originalSpan - validDelta;
+
+          domElement.style.transform = `translateX(${validDelta * cellW}px)`;
+          domElement.style.width = `calc(${newSpan} * ${cellW}px - 1px)`;
+        }
+      });
+
+      scroll.addEventListener("pointerup", (e) => {
+        if (!refDragState) return;
+
+        const curFrame = clamp(getFrameFromX(e.clientX), 0, totalFrames - 1);
+        const delta = curFrame - refDragState.clickFrame;
+        const { mode, originalStart, originalSpan, refItem, domElement } = refDragState;
+
+        domElement.style.transform = "";
+        domElement.classList.remove("dragging");
+        try { scroll.releasePointerCapture(e.pointerId); } catch {}
+
+        if (delta !== 0) {
+          let newStart = originalStart;
+          let oldEndIdx = originalStart + originalSpan; 
+          let newEndIdx = oldEndIdx;
+
+          if (mode === "move") {
+            newStart = clamp(originalStart + delta, 0, totalFrames - 1);
+            newEndIdx = Math.min(newStart + originalSpan, totalFrames);
+          } 
+          else if (mode === "left") {
+            newStart = clamp(originalStart + delta, 0, oldEndIdx - 1);
+            newEndIdx = oldEndIdx; 
+          } 
+          else if (mode === "right") {
+            newStart = originalStart;
+            const requestedEnd = originalStart + originalSpan + delta;
+            newEndIdx = clamp(requestedEnd, newStart + 1, totalFrames);
+          }
+
+          if (newStart !== originalStart && referenceCels[originalStart] === refItem) {
+            referenceCels[originalStart] = null; 
+          }
+
+          referenceCels[newStart] = refItem;
+
+          for (let i = newStart + 1; i < newEndIdx; i++) {
+            if (i < totalFrames && !(referenceCels[i] instanceof HTMLImageElement)) {
+              referenceCels[i] = null;
+            }
+          }
+
+          if (newEndIdx < totalFrames) {
+            const existing = referenceCels[newEndIdx];
+            if (existing === null || existing.empty) {
+              referenceCels[newEndIdx] = { empty: true };
+            }
+          }
+        }
+
+        refDragState = null;
+        if (typeof buildTimeline === "function") buildTimeline();
+        renderAll();
+      });
+    }
 
     // -------------------------
     // Timeline header mini-controls wiring (if you have them)
@@ -11273,6 +11555,86 @@
 
     // Call once (safe)
     initIslandLayerAutoFit();
+
+    // -------------------------
+    // Reference Layer Wiring
+    // -------------------------
+    function wireReferenceLayerControls() {
+      const refFileInp = document.getElementById("refFileInp");
+      const loadRefBtn = document.getElementById("loadRefBtn");
+      const clearRefBtn = document.getElementById("clearRefBtn");
+      const refOpacityInp = document.getElementById("refOpacity");
+      const refToggle = document.getElementById("refToggle");
+
+      if (loadRefBtn && refFileInp) {
+        loadRefBtn.addEventListener("click", () => {
+          refFileInp.value = ""; 
+          refFileInp.click();
+        });
+
+        refFileInp.addEventListener("change", (e) => {
+          const file = e.target.files?.[0]; 
+          if (!file) return;
+          const reader = new FileReader();
+
+          reader.onload = (evt) => {
+            const img = new Image();
+            img._filename = file.name; 
+
+            img.onload = () => {
+              referenceCels[currentFrame] = img;
+
+              const duration = (typeof fps === "number" ? fps : 24); 
+              const endFrame = currentFrame + duration;
+
+              if (endFrame < totalFrames) {
+                 if (referenceCels[endFrame] === null) {
+                   referenceCels[endFrame] = { empty: true };
+                 }
+              }
+
+              referenceVisible = true;
+              if (refToggle) refToggle.checked = true;
+
+              if (typeof buildTimeline === "function") buildTimeline();
+              renderAll();
+            };
+            img.src = evt.target.result;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      if (clearRefBtn) {
+        clearRefBtn.addEventListener("click", () => {
+          referenceCels[currentFrame] = { empty: true };
+          if (typeof buildTimeline === "function") buildTimeline();
+          renderAll();
+        });
+
+        clearRefBtn.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          referenceCels[currentFrame] = null;
+          if (typeof buildTimeline === "function") buildTimeline();
+          renderAll();
+        });
+      }
+
+      if (refOpacityInp) {
+        refOpacityInp.addEventListener("input", (e) => {
+          referenceOpacity = parseInt(e.target.value, 10) / 100;
+          renderAll();
+        });
+      }
+
+      if (refToggle) {
+        refToggle.addEventListener("change", (e) => {
+          referenceVisible = e.target.checked;
+          renderAll();
+        });
+      }
+    }
+
     // -------------------------
     // Init
     // -------------------------
@@ -11333,6 +11695,9 @@
     wirePanelToggles();
     wireBrushButtonRightClick();
     wireEraserButtonRightClick();
+
+    wireReferenceLayerControls();
+    initReferenceTimelineInteraction();
 
     wirePointerDrawingOnCanvas(document.getElementById("drawCanvas"));
     // Final init

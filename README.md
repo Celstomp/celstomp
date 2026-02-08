@@ -1,6 +1,9 @@
 # Celstomp
 
+<img width="1920" height="884" alt="image" src="https://github.com/user-attachments/assets/caa9c566-00fc-40dc-9a9c-0eac762d1bee" />
+
 > **Note:** This project was originally made with AI assistance. The code is currently being rewritten and refactored into human-written code.
+
 
 A 2D animation web application built with HTML, CSS, and JavaScript.
 

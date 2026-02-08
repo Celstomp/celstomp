@@ -379,6 +379,10 @@
         const saveStateBadgeEl = document.getElementById("saveStateBadge");
         const exportImgSeqBtn = document.getElementById("exportImgSeqBtn") || document.getElementById("exportImgSeq");
         const stabilizationSelect = $("stabilizationLevel");
+        const penControls = $("penControls");
+        const pressureSizeToggle = $("pressureSize") || $("usePressureSize");
+        const pressureOpacityToggle = $("pressureOpacity") || $("usePressureOpacity");
+        const pressureTiltToggle = $("pressureTilt") || $("usePressureTilt");
         function canvasToBlob(canvas, type = "image/png", quality) {
             return new Promise(resolve => {
                 canvas.toBlob(b => resolve(b), type, quality);
@@ -539,16 +543,24 @@
         let currentColor = "#000000";
         let usePressureSize = true;
         let usePressureOpacity = false;
+        let usePressureTilt = false;
         let antiAlias = false;
         let closeGapPx = 0;
         let autofill = false;
         const fillWhite = "#ffffff";
         const fillBrushTrailColor = "#ff1744";
         const pressureCache = new Map;
+        const tiltCache = new Map;
         const PRESSURE_MIN = .05;
+        let penDetected = false;
         let stabilizationLevel = 5;
         let pressureSmooth = .45;
+        let strokeSmooth = .6;
         function pressureSmoothFromLevel(level) {
+            const lv = Math.max(0, Math.min(10, Number(level) || 0));
+            return Math.max(.2, Math.min(1, 1 - lv * .08));
+        }
+        function strokeSmoothFromLevel(level) {
             const lv = Math.max(0, Math.min(10, Number(level) || 0));
             return Math.max(.2, Math.min(1, 1 - lv * .08));
         }
@@ -3597,6 +3609,53 @@
             pressureCache.set(pid, out);
             return out;
         }
+        function tiltAmount(e) {
+            const pid = Number.isFinite(e?.pointerId) ? e.pointerId : -1;
+            if (e?.pointerType !== "pen") {
+                tiltCache.set(pid, 0);
+                return 0;
+            }
+            const tx = Number.isFinite(e?.tiltX) ? e.tiltX : 0;
+            const ty = Number.isFinite(e?.tiltY) ? e.tiltY : 0;
+            const raw = Math.max(0, Math.min(1, Math.hypot(tx, ty) / 90));
+            const prev = tiltCache.has(pid) ? tiltCache.get(pid) : raw;
+            const smoothed = prev + (raw - prev) * .35;
+            const out = Math.max(0, Math.min(1, smoothed));
+            tiltCache.set(pid, out);
+            return out;
+        }
+        function setPenControlsVisible(visible) {
+            if (!penControls) return;
+            penControls.hidden = !visible;
+        }
+        function notePenDetected(e) {
+            if (!e || e.pointerType !== "pen") return;
+            if (penDetected) return;
+            penDetected = true;
+            setPenControlsVisible(true);
+        }
+        function shouldStabilizeTool(name) {
+            return name === "brush" || name === "eraser" || name === "fill-brush" || name === "fill-eraser";
+        }
+        function stabilizePoint(e, x, y) {
+            if (!shouldStabilizeTool(tool)) return {
+                x: x,
+                y: y
+            };
+            const pt = {
+                x: x,
+                y: y
+            };
+            if (!stabilizedPt) {
+                stabilizedPt = pt;
+                return pt;
+            }
+            stabilizedPt = {
+                x: stabilizedPt.x + (pt.x - stabilizedPt.x) * strokeSmooth,
+                y: stabilizedPt.y + (pt.y - stabilizedPt.y) * strokeSmooth
+            };
+            return stabilizedPt;
+        }
         function stampSquareLine(ctx, x0, y0, x1, y1, size, color, alpha = 1) {
             const s = Math.max(1, Math.round(size));
             const dx = x1 - x0, dy = y1 - y0;
@@ -4247,6 +4306,9 @@
                     lastPt = null;
                 } catch {}
                 try {
+                    stabilizedPt = null;
+                } catch {}
+                try {
                     trailPoints = [];
                 } catch {}
                 try {
@@ -4324,6 +4386,7 @@
             });
         }
         let lastPt = null;
+        let stabilizedPt = null;
         let strokeHex = null;
         let _fillEraseAllLayers = false;
         let isPanning = false;
@@ -4544,7 +4607,12 @@
         }
         function startStroke(e) {
             const pos = getCanvasPointer(e);
-            const {x: x, y: y} = screenToContent(pos.x, pos.y);
+            let {x: x, y: y} = screenToContent(pos.x, pos.y);
+            notePenDetected(e);
+            stabilizedPt = null;
+            const startPt = stabilizePoint(e, x, y);
+            x = startPt.x;
+            y = startPt.y;
             if (x < 0 || y < 0 || x > contentW || y > contentH) return;
             if (e.button === 2) {
                 startPan(e);
@@ -4644,11 +4712,13 @@
             const off = getFrameCanvas(activeLayer, currentFrame, strokeHex);
             const ctx = off.getContext("2d");
             const p = pressure(e);
+            const t = usePressureTilt ? tiltAmount(e) : 0;
             markGlobalHistoryDirty();
             markGlobalHistoryDirty();
             if (tool === "brush") {
                 if (activeLayer === LAYER.LINE) {
-                    const size = usePressureSize ? brushSize * p : brushSize;
+                    const pressureSize = usePressureSize ? brushSize * p : brushSize;
+                    const size = e?.pointerType === "pen" && usePressureTilt ? pressureSize * (1 + t * .75) : pressureSize;
                     const alpha = usePressureOpacity ? p : 1;
                     stampSquareLine(ctx, x, y, x + .01, y + .01, size, currentColor, alpha);
                 } else {
@@ -4659,14 +4729,17 @@
                         ctx.globalCompositeOperation = "source-over";
                         ctx.strokeStyle = currentColor;
                         ctx.globalAlpha = usePressureOpacity ? p : 1;
-                        ctx.lineWidth = Math.max(.5, usePressureSize ? brushSize * p : brushSize);
+                        const pressureSize = usePressureSize ? brushSize * p : brushSize;
+                        const size = e?.pointerType === "pen" && usePressureTilt ? pressureSize * (1 + t * .75) : pressureSize;
+                        ctx.lineWidth = Math.max(.5, size);
                         ctx.beginPath();
                         ctx.moveTo(x, y);
                         ctx.lineTo(x + .01, y + .01);
                         ctx.stroke();
                         ctx.restore();
                     } else {
-                        const size = usePressureSize ? brushSize * p : brushSize;
+                        const pressureSize = usePressureSize ? brushSize * p : brushSize;
+                        const size = e?.pointerType === "pen" && usePressureTilt ? pressureSize * (1 + t * .75) : pressureSize;
                         const alpha = usePressureOpacity ? p : 1;
                         stampSquareLine(ctx, x, y, x + .01, y + .01, size, currentColor, alpha);
                     }
@@ -4676,7 +4749,8 @@
                 ctx.globalCompositeOperation = "destination-out";
                 ctx.lineCap = "round";
                 ctx.lineJoin = "round";
-                ctx.lineWidth = eraserSize;
+                const eraserTilt = e?.pointerType === "pen" && usePressureTilt ? 1 + t * .75 : 1;
+                ctx.lineWidth = eraserSize * eraserTilt;
                 ctx.beginPath();
                 ctx.moveTo(x, y);
                 ctx.lineTo(x + .01, y + .01);
@@ -4690,7 +4764,11 @@
         function continueStroke(e) {
             if (!isDrawing) return;
             const pos = getCanvasPointer(e);
-            const {x: x, y: y} = screenToContent(pos.x, pos.y);
+            let {x: x, y: y} = screenToContent(pos.x, pos.y);
+            notePenDetected(e);
+            const movePt = stabilizePoint(e, x, y);
+            x = movePt.x;
+            y = movePt.y;
             if (!lastPt) lastPt = {
                 x: x,
                 y: y
@@ -4747,10 +4825,12 @@
             const off = getFrameCanvas(activeLayer, currentFrame, hex);
             const ctx = off.getContext("2d");
             const p = pressure(e);
+            const t = usePressureTilt ? tiltAmount(e) : 0;
             markGlobalHistoryDirty();
             if (tool === "brush") {
                 if (activeLayer === LAYER.LINE) {
-                    const size = usePressureSize ? brushSize * p : brushSize;
+                    const pressureSize = usePressureSize ? brushSize * p : brushSize;
+                    const size = e?.pointerType === "pen" && usePressureTilt ? pressureSize * (1 + t * .75) : pressureSize;
                     const alpha = usePressureOpacity ? p : 1;
                     stampSquareLine(ctx, lastPt.x, lastPt.y, x, y, size, currentColor, alpha);
                 } else {
@@ -4761,14 +4841,17 @@
                         ctx.globalCompositeOperation = "source-over";
                         ctx.strokeStyle = currentColor;
                         ctx.globalAlpha = usePressureOpacity ? p : 1;
-                        ctx.lineWidth = Math.max(.5, usePressureSize ? brushSize * p : brushSize);
+                        const pressureSize = usePressureSize ? brushSize * p : brushSize;
+                        const size = e?.pointerType === "pen" && usePressureTilt ? pressureSize * (1 + t * .75) : pressureSize;
+                        ctx.lineWidth = Math.max(.5, size);
                         ctx.beginPath();
                         ctx.moveTo(lastPt.x, lastPt.y);
                         ctx.lineTo(x, y);
                         ctx.stroke();
                         ctx.restore();
                     } else {
-                        const size = usePressureSize ? brushSize * p : brushSize;
+                        const pressureSize = usePressureSize ? brushSize * p : brushSize;
+                        const size = e?.pointerType === "pen" && usePressureTilt ? pressureSize * (1 + t * .75) : pressureSize;
                         const alpha = usePressureOpacity ? p : 1;
                         stampSquareLine(ctx, lastPt.x, lastPt.y, x, y, size, currentColor, alpha);
                     }
@@ -4778,7 +4861,8 @@
                 ctx.globalCompositeOperation = "destination-out";
                 ctx.lineCap = "round";
                 ctx.lineJoin = "round";
-                ctx.lineWidth = eraserSize;
+                const eraserTilt = e?.pointerType === "pen" && usePressureTilt ? 1 + t * .75 : 1;
+                ctx.lineWidth = eraserSize * eraserTilt;
                 ctx.beginPath();
                 ctx.moveTo(lastPt.x, lastPt.y);
                 ctx.lineTo(x, y);
@@ -4808,6 +4892,9 @@
                     lastPt = null;
                 } catch {}
                 try {
+                    stabilizedPt = null;
+                } catch {}
+                try {
                     trailPoints = [];
                 } catch {}
                 try {
@@ -4834,6 +4921,9 @@
                 try {
                     lastPt = null;
                 } catch {}
+                try {
+                    stabilizedPt = null;
+                } catch {}
                 return;
             }
             if (tool === "rect-select") {
@@ -4845,6 +4935,9 @@
                 } catch {}
                 try {
                     lastPt = null;
+                } catch {}
+                try {
+                    stabilizedPt = null;
                 } catch {}
                 return;
             }
@@ -4867,6 +4960,7 @@
                 } catch {}
                 trailPoints = [];
                 lastPt = null;
+                stabilizedPt = null;
                 _fillEraseAllLayers = false;
                 isDrawing = false;
                 try {
@@ -4879,6 +4973,9 @@
             } catch {}
             try {
                 lastPt = null;
+            } catch {}
+            try {
+                stabilizedPt = null;
             } catch {}
             try {
                 trailPoints = [];
@@ -5550,6 +5647,7 @@
             if (tool === "rect-select") {
                 endRectSelect();
                 lastPt = null;
+                stabilizedPt = null;
                 return;
             }
             if (tool === "lasso-erase" && lassoActive) {
@@ -5557,6 +5655,7 @@
                 applyLassoErase();
                 cancelLasso();
                 lastPt = null;
+                stabilizedPt = null;
                 return;
             }
             try {
@@ -5567,6 +5666,7 @@
                 applyLassoFill();
                 cancelLasso();
                 lastPt = null;
+                stabilizedPt = null;
                 return;
             }
             if (tool === "eraser" && activeLayer !== PAPER_LAYER) {
@@ -5584,6 +5684,7 @@
                 clearFx();
                 trailPoints = [];
                 lastPt = null;
+                stabilizedPt = null;
                 return;
             }
             if (tool === "fill-eraser") {
@@ -5591,6 +5692,7 @@
                     clearFx();
                     trailPoints = [];
                     lastPt = null;
+                    stabilizedPt = null;
                     return;
                 }
                 const strokePts = trailPoints.length ? trailPoints : lastPt ? [ lastPt ] : [];
@@ -5598,13 +5700,18 @@
                 clearFx();
                 trailPoints = [];
                 lastPt = null;
+                stabilizedPt = null;
                 return;
             }
             if (autofill && activeLayer === LAYER.LINE && tool === "brush") {
                 pushUndo(LAYER.FILL, currentFrame);
-                fillFromLineart(currentFrame);
+                beginGlobalHistoryStep(LAYER.FILL, currentFrame, fillWhite);
+                const filled = fillFromLineart(currentFrame);
+                if (filled) markGlobalHistoryDirty();
+                commitGlobalHistoryStep();
             }
             lastPt = null;
+            stabilizedPt = null;
         }
         function initStagePinchCameraZoom(stageViewport) {
             if (!stageViewport || stageViewport._pinchCamWired) return;
@@ -5804,6 +5911,7 @@
                 drawCanvas.releasePointerCapture(e.pointerId);
             } catch {}
             pressureCache.delete(e.pointerId);
+            tiltCache.delete(e.pointerId);
             activePointers.delete(e.pointerId);
             if (activePointers.size < 2) window.__celstompPinching = false;
             if (isDrawing) endStroke();
@@ -5853,6 +5961,7 @@
             pinch = null;
             window.__celstompPinching = false;
             pressureCache.clear();
+            tiltCache.clear();
         };
         window.addEventListener("blur", hardResetPinch, true);
         document.addEventListener("visibilitychange", () => {
@@ -7357,7 +7466,7 @@
             badgeEl: saveStateBadgeEl,
             buildSnapshot: async () => await buildProjectSnapshot(),
             pointerSelectors: [ "#drawCanvas", "#fillCurrent", "#fillAll", "#tlDupCel", "#toolSeg label", "#layerSeg .layerRow", "#timelineTable td" ],
-            valueSelectors: [ "#autofillToggle", "#brushSize", "#eraserSize", "#tlSnap", "#tlSeconds", "#tlFps", "#tlOnion", "#tlTransparency", "#loopToggle", "#onionPrevColor", "#onionNextColor", "#onionAlpha" ],
+            valueSelectors: [ "#autofillToggle", "#brushSize", "#brushSizeRange", "#brushSizeNum", "#eraserSize", "#pressureSize", "#pressureOpacity", "#pressureTilt", "#tlSnap", "#tlSeconds", "#tlFps", "#tlOnion", "#tlTransparency", "#loopToggle", "#onionPrevColor", "#onionNextColor", "#onionAlpha" ],
             onRestorePayload: (payload, source) => {
                 const blob = new Blob([ JSON.stringify(payload.data) ], {
                     type: "application/json"
@@ -8350,6 +8459,7 @@
                 if (e.pointerType === "touch") {
                     touches.delete(e.pointerId);
                     pressureCache.delete(e.pointerId);
+                    tiltCache.delete(e.pointerId);
                     if (pending && pending.pid === e.pointerId) cancelPending();
                     if (activeDrawPid === e.pointerId) endDraw(e.pointerId, e.clientX, e.clientY);
                     if (touches.size < 2) pinch = null;
@@ -8370,6 +8480,7 @@
                     endDraw(e.pointerId, e.clientX, e.clientY);
                 }
                 pressureCache.delete(e.pointerId);
+                tiltCache.delete(e.pointerId);
             }
             stageViewport.addEventListener("pointerup", endPointer, {
                 capture: true,
@@ -8754,8 +8865,13 @@
         const applyStabilizationLevel = v => {
             stabilizationLevel = Math.max(0, Math.min(10, parseInt(v, 10) || 0));
             pressureSmooth = pressureSmoothFromLevel(stabilizationLevel);
+            strokeSmooth = strokeSmoothFromLevel(stabilizationLevel);
             safeSetValue(stabilizationSelect, stabilizationLevel);
         };
+        setPenControlsVisible(false);
+        safeSetChecked(pressureSizeToggle, usePressureSize);
+        safeSetChecked(pressureOpacityToggle, usePressureOpacity);
+        safeSetChecked(pressureTiltToggle, usePressureTilt);
         applyStabilizationLevel(stabilizationLevel);
         stabilizationSelect?.addEventListener("change", e => {
             applyStabilizationLevel(e.target.value);
@@ -8785,8 +8901,9 @@
             eraserSize = parseInt(e.target.value, 10);
             safeText(eraserVal, String(eraserSize));
         });
-        $("pressureSize")?.addEventListener("change", e => usePressureSize = e.target.checked);
-        $("pressureOpacity")?.addEventListener("change", e => usePressureOpacity = e.target.checked);
+        pressureSizeToggle?.addEventListener("change", e => usePressureSize = e.target.checked);
+        pressureOpacityToggle?.addEventListener("change", e => usePressureOpacity = e.target.checked);
+        pressureTiltToggle?.addEventListener("change", e => usePressureTilt = e.target.checked);
         toggleOnionBtn?.addEventListener("click", () => {
             onionEnabled = !onionEnabled;
             toggleOnionBtn.textContent = `Onion: ${onionEnabled ? "On" : "Off"}`;

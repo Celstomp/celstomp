@@ -2590,6 +2590,11 @@ textarea{
   padding: 0 8px;
 }
 
+#penControls{
+  display: grid;
+  gap: 6px;
+}
+
 .mainBrushSizeGroup{
   display: flex;
   flex-direction: column;

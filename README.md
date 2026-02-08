@@ -1,77 +1,67 @@
-# Celstomp_v1
-a site where you could animate on (vibecoded help)
+# Celstomp
 
-I'd like to preface by saying that this site was vibecoded.
+> **Note:** This project was originally made with AI assistance. The code is currently being rewritten and refactored into human-written code.
 
-I'm by no means in any way a traditional programmer, but i had just wanted to make animation more accessible and intuitive.
-Therefore i'm including all the messy comments the AI had wrote, as i understand that it may be helpful for some trying to navigate around the horrendous code. (I apologize for this)
+A 2D animation web application built with HTML, CSS, and JavaScript.
 
-I come from an art background, but interested in learning code.
-I'm a bit ashamed of using vibecoding to create this, so any feedback about this will be greatly appreciated as im trying to learn along the way. Thank you!
+## About
 
-you can access it here:
-ginyo.space/celstomp/
+Celstomp is a browser-based animation tool designed for traditional frame-by-frame animation. The project started as a personal project to make animation more accessible.
 
-The main features are as follows;
+I come from an art background and built this while learning to code.
 
--Canvas
--Timeline
--Celstomp Window
-  -Color Wheel
-  -Tools
-  -Layer System
--Drawing
+## Live Site
 
---------------------------------------
-Canvas- 
-The canvas, 16/9 is on top of a stage that can be zoomed or panned.
-The canvas should be able to zoomed by scroll/finger pinching
+https://ginyo.space/celstomp/
 
-Timeline-
-It is a table with rows and columns, the columns representing the "cels"
-The cels can be dragged around, to select multiple cels drag to select it as a group on the timeline.
+## Features
 
-Celstomp Window-
-  -On the cel stomp window there is a side panel where you can find settings to:
-    -Save
-    -Load
-    -Fill Current cel
-    -Fill all cels
-    -Autofill on draw
-    -Recenter Canvas
-    -Export MP4
-    -Export as IMG SEQ
+- **Canvas**: 16:9 ratio, zoom/pan with scroll or pinch
+- **Timeline**: Frame-by-frame grid, drag cels, multi-select
+- **Tools**: Brush, Eraser, Fill Brush, Fill Eraser, Lasso
+- **Layers**: LINE, SHADE, COLOR, FILL, PAPER - with swatches and reordering
+- **Onion Skin**: Preview prev/next frames (adjustable colors/opacity)
+- **Export**: MP4 video or image sequence
+- **Save/Load**: Project files in JSON format
 
+### Shortcuts
+- Tools: 1-6
+- Prev/Next Cel: Up/Down or Q/W
+- Prev/Next Frame: Left/Right or E/R
 
-  -Color Wheel on the top left
-    
-    
-  -Tools on the top right
-    -Brush
-    -Eraser
-    -Fill Brush
-    -Fill Eraser
-    -Lasso Brush
-    -Laso Eraser
+## Setup
 
+### Running Locally
 
-  -Layer System at the bottom of the panel
-    -LINE
-    -SHADE
-    -COLOR
-    -FILL
-    -PAPER
-    For each layer you should be able to Hide it with the Eye Icon
-    When you draw a specific color on a selected layer, it a color swatch should appear on the right of the layer. 
-    You can right click a specific layer to adjust its opacity, or clip to the layer below.
-    The layering of the swatches works so that the one on the right is the most on top.
-    You can drag the swatches to reorder them all over the layer system.
-    You can right click the swatches to change the color of all the cels in the timeline.
+Clone the repository:
 
-    
+```bash
+git clone https://github.com/ginyoagoldie/celstomp_v1.git
+cd celstomp_v1
+```
 
+#### Linux / Mac (Terminal)
+```bash
+./run-dev.command
+```
 
-    
+#### Windows
+Double-click `run-dev.bat`
 
-----------------------------------
-    
+Or run from command prompt:
+```cmd
+run-dev.bat
+```
+
+#### Mac (Double-click)
+Double-click `run-dev.command` in Finder
+
+The server will start at http://localhost:8000
+
+### Requirements
+- Python 3.x (most systems have this pre-installed)
+- web browser (Chrome, Firefox, Safari, Edge)
+
+## License
+
+See LICENSE file.

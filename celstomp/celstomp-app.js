@@ -10751,15 +10751,9 @@
       resizeCanvases();
     });
 
-    window.addEventListener("resize", () => {
-      if (shouldIgnoreViewportResize()) return;
-      scheduleResizeAll(); // whatever you call
-    }, { passive: true });
-
     if (window.visualViewport){
       window.visualViewport.addEventListener("resize", () => {
-        if (shouldIgnoreViewportResize()) return;
-        scheduleResizeAll();
+        resizeCanvases();
       }, { passive: true });
     }
 

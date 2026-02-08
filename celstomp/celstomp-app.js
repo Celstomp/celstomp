@@ -485,6 +485,7 @@
     const saveProjBtn = document.getElementById("saveProj");
     const loadProjBtn = document.getElementById("loadProj");
     const loadFileInp = document.getElementById("loadFileInp");
+    const restoreAutosaveBtn = document.getElementById("restoreAutosave");
     const saveStateBadgeEl = document.getElementById("saveStateBadge");
 
     const exportImgSeqBtn =
@@ -8415,6 +8416,32 @@
       } catch {}
     }
 
+    function getAutosavePayload() {
+      try {
+        const raw = localStorage.getItem(AUTOSAVE_KEY);
+        if (!raw) return null;
+        const payload = JSON.parse(raw);
+        const savedAt = Number(payload?.savedAt || 0);
+        if (!Number.isFinite(savedAt) || !payload?.data) return null;
+        return payload;
+      } catch {
+        return null;
+      }
+    }
+
+    function hasRecoverableAutosave() {
+      const payload = getAutosavePayload();
+      if (!payload) return false;
+      return Number(payload.savedAt) > getLastManualSaveAt();
+    }
+
+    function updateRestoreAutosaveButton() {
+      if (!restoreAutosaveBtn) return;
+      const enabled = hasRecoverableAutosave();
+      restoreAutosaveBtn.disabled = !enabled;
+      restoreAutosaveBtn.textContent = enabled ? "Restore Draft" : "Restore Draft";
+    }
+
     function formatClock(ts) {
       const d = new Date(ts);
       return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -8535,6 +8562,7 @@
         localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(payload));
         autosaveDirty = false;
         setSaveStateBadge(`Autosaved ${formatClock(savedAt)}`);
+        updateRestoreAutosaveButton();
       } catch (err) {
         console.warn("[celstomp] autosave failed:", err);
         setSaveStateBadge("Autosave failed", "error");
@@ -8604,11 +8632,9 @@
 
     function maybePromptAutosaveRecovery() {
       try {
-        const raw = localStorage.getItem(AUTOSAVE_KEY);
-        if (!raw) return;
-        const payload = JSON.parse(raw);
-        const savedAt = Number(payload?.savedAt || 0);
-        if (!Number.isFinite(savedAt) || !payload?.data) return;
+        const payload = getAutosavePayload();
+        if (!payload) return;
+        const savedAt = Number(payload.savedAt || 0);
         if (savedAt <= getLastManualSaveAt()) return;
 
         const ok = window.confirm(
@@ -8616,11 +8642,12 @@
         );
         if (!ok) {
           setSaveStateBadge("Unsaved draft", "dirty");
+          updateRestoreAutosaveButton();
           return;
         }
 
         const blob = new Blob([JSON.stringify(payload.data)], { type: "application/json" });
-        loadProject(blob);
+        loadProject(blob, { source: "autosave-prompt" });
       } catch (err) {
         console.warn("[celstomp] autosave recovery check failed:", err);
       }
@@ -8645,11 +8672,12 @@
 
       setLastManualSaveAt(Date.now());
       markProjectClean("Saved");
+      updateRestoreAutosaveButton();
       window.dispatchEvent(new CustomEvent("celstomp:project-saved", { detail: { source: "manual" } }));
     }
 
 
-    function loadProject(file){
+    function loadProject(file, options = {}){
       const fr = new FileReader();
       fr.onerror = () => alert("Failed to read file.");
 
@@ -8945,8 +8973,15 @@
           try { updateHUD?.(); } catch {}
           try { if (typeof gotoFrame === "function") gotoFrame(currentFrame); } catch {}
 
-          markProjectClean("Loaded");
-          window.dispatchEvent(new CustomEvent("celstomp:project-loaded", { detail: { source: "file" } }));
+          const source = String(options?.source || "file");
+          if (source.startsWith("autosave")) {
+            markProjectDirty();
+            setSaveStateBadge("Recovered draft", "dirty");
+          } else {
+            markProjectClean("Loaded");
+          }
+          updateRestoreAutosaveButton();
+          window.dispatchEvent(new CustomEvent("celstomp:project-loaded", { detail: { source } }));
         })().catch((err) => {
           console.warn("[celstomp] loadProject failed:", err);
           alert("Failed to load project:\n" + (err?.message || String(err)));
@@ -10361,6 +10396,7 @@
       const saveProjBtn = document.getElementById("saveProj");
       const loadProjBtn = document.getElementById("loadProj");
       const loadFileInp = document.getElementById("loadFileInp");
+      const restoreAutosaveBtn = document.getElementById("restoreAutosave");
 
       if (!saveProjBtn || !loadProjBtn || !loadFileInp) return;
 
@@ -10382,14 +10418,25 @@
         loadFileInp.click();
       });
 
+      restoreAutosaveBtn?.addEventListener("click", () => {
+        const payload = getAutosavePayload();
+        if (!payload) {
+          updateRestoreAutosaveButton();
+          return;
+        }
+        const blob = new Blob([JSON.stringify(payload.data)], { type: "application/json" });
+        loadProject(blob, { source: "autosave-button" });
+      });
+
       loadFileInp.addEventListener("change", (e) => {
         const f = e.currentTarget.files?.[0] || null;
         e.currentTarget.value = ""; // reset immediately
-        if (f) loadProject(f);
+        if (f) loadProject(f, { source: "file" });
       });
 
       setSaveStateBadge("Saved");
       wireAutosaveDirtyTracking();
+      updateRestoreAutosaveButton();
       window.setTimeout(maybePromptAutosaveRecovery, 0);
     }
 

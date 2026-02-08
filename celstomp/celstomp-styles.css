@@ -1961,9 +1961,14 @@ textarea{
   button,
   #timelineHeader button,
   #islandSidePanel .chip,
+  #brushSizeNum,
   #islandSidePanel input[type="number"],
   #islandSidePanel input[type="checkbox"]{
     min-height: 40px;
+  }
+
+  .brushSizeControls{
+    grid-template-columns: 1fr 82px;
   }
 
   
@@ -2527,9 +2532,29 @@ textarea{
   gap: 8px;
 }
 
-.islandSideRow{
+.brushSizeGroup{
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brushSizeGroup > label{
+  font-size: 12px;
+  color: rgba(255,255,255,0.8);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.brushSizeControls{
+  display: grid;
+  grid-template-columns: 1fr 72px;
   gap: 8px;
+  align-items: center;
+}
+
+#brushSizeRange,
+#brushSizeNum{
+  width: 100%;
 }
 
 .sideBtn{
@@ -2545,6 +2570,18 @@ textarea{
 #islandSidePanel button,
 #islandSidePanel .sideBtn{
   border-radius: 0 !important;
+}
+
+#brushSizeNum{
+  min-height: 34px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.9);
+  padding: 0 8px;
+}
+
+#brushSizeRange{
+  accent-color: #e53935;
 }
 
 

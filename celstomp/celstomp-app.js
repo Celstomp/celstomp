@@ -362,7 +362,8 @@
         document.addEventListener("keydown", e => {
             if (e.key === "Escape") closePopup(eraserOptionsPopup);
         });
-        const brushSizeInput = $("brushSize");
+        const brushSizeInput = $("brushSize") || $("brushSizeRange");
+        const brushSizeNumInput = $("brushSizeNum");
         const eraserSizeInput = $("eraserSize");
         const brushVal = $("brushVal");
         const eraserVal = $("eraserVal");
@@ -370,7 +371,6 @@
         const brushHexEl = $("brushHex");
         const infoBtn = $("infoBtn");
         const infoPanel = $("infoPanel");
-        const exportWebMBtn = $("exportWebM");
         const exportMP4Btn = $("exportMP4");
         const saveProjBtn = document.getElementById("saveProj");
         const loadProjBtn = document.getElementById("loadProj");
@@ -2640,6 +2640,7 @@
             }
             function syncMainUIFromState() {
                 if (typeof brushSizeInput !== "undefined" && brushSizeInput) brushSizeInput.value = String(Math.round(Number(brushSize) || 1));
+                if (typeof brushSizeNumInput !== "undefined" && brushSizeNumInput) brushSizeNumInput.value = String(Math.round(Number(brushSize) || 1));
                 if (typeof brushVal !== "undefined" && brushVal) brushVal.textContent = String(Math.round(Number(brushSize) || 1));
                 if (typeof aaToggle !== "undefined" && aaToggle && "checked" in aaToggle) aaToggle.checked = !!antiAlias;
                 const ps = document.getElementById("pressureSize") || document.getElementById("usePressureSize");
@@ -7619,6 +7620,7 @@
                         updateHUD?.();
                     } catch {}
                     safeSetValue(brushSizeInput, brushSize);
+                    safeSetValue(brushSizeNumInput, brushSize);
                     safeSetValue(eraserSizeInput, eraserSize);
                     safeText(brushVal, String(brushSize));
                     safeText(eraserVal, String(eraserSize));
@@ -8641,9 +8643,26 @@
             antiAlias = e.target.checked;
             renderAll();
         });
-        brushSizeInput?.addEventListener("input", e => {
-            brushSize = parseInt(e.target.value, 10);
+        const clampBrushSizeUiValue = raw => {
+            const n = parseInt(raw, 10);
+            const min = parseInt(brushSizeInput?.min || brushSizeNumInput?.min || "1", 10) || 1;
+            const max = parseInt(brushSizeInput?.max || brushSizeNumInput?.max || "999", 10) || 999;
+            return Math.max(min, Math.min(max, Number.isFinite(n) ? n : brushSize));
+        };
+        const applyBrushSizeUi = v => {
+            brushSize = clampBrushSizeUiValue(v);
+            safeSetValue(brushSizeInput, brushSize);
+            safeSetValue(brushSizeNumInput, brushSize);
             safeText(brushVal, String(brushSize));
+            try {
+                scheduleBrushPreviewUpdate?.(true);
+            } catch {}
+        };
+        brushSizeInput?.addEventListener("input", e => {
+            applyBrushSizeUi(e.target.value);
+        });
+        brushSizeNumInput?.addEventListener("input", e => {
+            applyBrushSizeUi(e.target.value);
         });
         eraserSizeInput?.addEventListener("input", e => {
             eraserSize = parseInt(e.target.value, 10);
@@ -8731,10 +8750,6 @@
         tlPlayBtn?.addEventListener("click", () => $("playBtn")?.click());
         tlPauseBtn?.addEventListener("click", () => $("pauseBtn")?.click());
         tlStopBtn?.addEventListener("click", () => $("stopBtn")?.click());
-        exportWebMBtn?.addEventListener("click", async () => {
-            const mime = pickWebMMime();
-            await exportClip(mime, "webm");
-        });
         exportMP4Btn?.addEventListener("click", async () => {
             const mime = pickMP4Mime();
             if (!mime) {

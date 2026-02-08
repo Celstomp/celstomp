@@ -249,11 +249,15 @@
 
         </div>
 
-        <div id="paletteBar" class="paletteBar" aria-label="Saved colors"></div>
-
-        <div class="islandSideRow">
-         
+        <div class="brushSizeGroup" aria-label="Brush size controls">
+          <label for="brushSizeRange">Brush Size</label>
+          <div class="brushSizeControls">
+            <input id="brushSizeRange" type="range" min="1" max="400" step="1" value="3" />
+            <input id="brushSizeNum" type="number" min="1" max="400" step="1" value="3" inputmode="numeric" />
+          </div>
         </div>
+
+        <div id="paletteBar" class="paletteBar" aria-label="Saved colors"></div>
       </div>
     </div>
 

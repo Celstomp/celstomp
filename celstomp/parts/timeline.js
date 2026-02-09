@@ -13,6 +13,11 @@ document.getElementById('part-timeline').innerHTML = `
         <span class="badge" id="timeCounter">0s+0f</span>
         <span class="badge">Loop <input id="loopToggle" type="checkbox" checked
             style="vertical-align:middle; margin-left:6px;" /></span>
+        <button id="insertFrameBtn" class="miniBtn" title="Insert Frame">+</button>
+        <button id="deleteFrameBtn" class="miniBtn danger" title="Delete Frame">−</button>
+        <input id="gotoFrameInput" type="number" min="1" class="gotoFrameInput" placeholder="Frame #"
+            title="Jump to frame" />
+        <button id="gotoFrameBtn" class="miniBtn">Go</button>
       </div>
 
 
@@ -25,7 +30,6 @@ document.getElementById('part-timeline').innerHTML = `
       </div>
 
       <div class="right">
-
 
         <label><input id="tlOnion" type="checkbox" /> Onion</label>
         <button id="tlDupCel">Duplicate Cel</button>
@@ -40,6 +44,9 @@ document.getElementById('part-timeline').innerHTML = `
         <label for="tlFps">FPS</label>
         <input id="tlFps" type="number" min="1" style="width:70px;" />
 
+        <button id="zoomTimelineOut" class="miniBtn" title="Zoom Out">−</button>
+        <span class="timelineZoom">Zoom</span>
+        <button id="zoomTimelineIn" class="miniBtn" title="Zoom In">+</button>
 
         <button id="hideTimelineBtn">—</button>
       </div>

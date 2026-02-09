@@ -376,8 +376,101 @@
 
 @media (max-width: 720px){
   #onionOptionsStash{ display:none; }
-  
+
   #onionCtxMenu{
     width: min(270px, calc(100vw - 16px));
   }
 }
+
+/* Shortcuts Modal */
+.shortcutsGrid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  max-height: min(60dvh, 400px);
+  overflow: auto;
+}
+
+.shortcutsGrid h4{
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+  margin: 0 0 8px;
+}
+
+.shortcutsGrid .shortcutRow{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.shortcutsGrid kbd{
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  min-width: 24px;
+  text-align: center;
+  font-family: inherit;
+  font-size: 11px;
+  color: rgba(255,255,255,0.9);
+}
+
+.shortcutsGrid span{
+  flex: 1;
+  opacity: 0.85;
+}
+
+/* Mini Buttons */
+.miniBtn{
+  padding: 2px 8px;
+  font-size: 11px;
+  min-width: 24px;
+}
+
+.miniBtn.danger{
+  border-color: rgba(255,107,107,0.55);
+  color: #ffb3b3;
+}
+
+/* Timeline Enhancements */
+.gotoFrameInput{
+  width: 60px;
+  padding: 4px 6px;
+  font-size: 11px;
+  text-align: center;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+  color: #fff;
+}
+
+.gotoFrameInput::placeholder{
+  color: rgba(255,255,255,0.4);
+}
+
+.timelineZoom{
+  font-size: 10px;
+  opacity: 0.75;
+  letter-spacing: 0.06em;
+}
+
+/* Layer Controls */
+.layerControls{
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+/* Palette Controls */
+.paletteControls{
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+

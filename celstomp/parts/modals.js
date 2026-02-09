@@ -7,6 +7,58 @@ document.getElementById('part-modals').innerHTML = `
   <input id="loadFileInp" type="file" accept=".json,application/json"
     style="position:fixed; left:-9999px; width:1px; height:1px; opacity:0;" />
 
+  <div id="shortcutsModalBackdrop" class="modalBackdrop" hidden></div>
+  <div id="shortcutsModal" class="modalCard" role="dialog" aria-modal="true" aria-labelledby="shortcutsModalTitle" hidden>
+    <h3 id="shortcutsModalTitle">Keyboard Shortcuts</h3>
+    <div class="shortcutsGrid">
+      <div class="shortcutSection">
+        <h4>Tools</h4>
+        <div class="shortcutRow"><kbd>1</kbd><span>Brush</span></div>
+        <div class="shortcutRow"><kbd>2</kbd><span>Eraser</span></div>
+        <div class="shortcutRow"><kbd>3</kbd><span>Fill Brush</span></div>
+        <div class="shortcutRow"><kbd>4</kbd><span>Fill Eraser</span></div>
+        <div class="shortcutRow"><kbd>5</kbd><span>Lasso Fill</span></div>
+        <div class="shortcutRow"><kbd>6</kbd><span>Lasso Erase</span></div>
+        <div class="shortcutRow"><kbd>7</kbd><span>Rect Select</span></div>
+        <div class="shortcutRow"><kbd>8</kbd><span>Eyedropper</span></div>
+      </div>
+      <div class="shortcutSection">
+        <h4>Navigation</h4>
+        <div class="shortcutRow"><kbd>←</kbd><span>Prev Frame</span></div>
+        <div class="shortcutRow"><kbd>→</kbd><span>Next Frame</span></div>
+        <div class="shortcutRow"><kbd>↑</kbd><span>Next Cel</span></div>
+        <div class="shortcutRow"><kbd>↓</kbd><span>Prev Cel</span></div>
+        <div class="shortcutRow"><kbd>Q</kbd><span>Prev Cel</span></div>
+        <div class="shortcutRow"><kbd>W</kbd><span>Next Cel</span></div>
+        <div class="shortcutRow"><kbd>E</kbd><span>Prev Frame</span></div>
+        <div class="shortcutRow"><kbd>R</kbd><span>Next Frame</span></div>
+      </div>
+      <div class="shortcutSection">
+        <h4>Actions</h4>
+        <div class="shortcutRow"><kbd>Space</kbd><span>Play/Pause</span></div>
+        <div class="shortcutRow"><kbd>Ctrl+Z</kbd><span>Undo</span></div>
+        <div class="shortcutRow"><kbd>Ctrl+Y</kbd><span>Redo</span></div>
+        <div class="shortcutRow"><kbd>Ctrl+Shift+Z</kbd><span>Redo</span></div>
+        <div class="shortcutRow"><kbd>Del</kbd><span>Delete Selection/Color</span></div>
+        <div class="shortcutRow"><kbd>F</kbd><span>Fill Current Frame</span></div>
+        <div class="shortcutRow"><kbd>O</kbd><span>Toggle Onion</span></div>
+      </div>
+      <div class="shortcutSection">
+        <h4>Brush</h4>
+        <div class="shortcutRow"><kbd>[</kbd><span>Decrease Size</span></div>
+        <div class="shortcutRow"><kbd>]</kbd><span>Increase Size</span></div>
+        <div class="shortcutRow"><kbd>Shift + Draw</kbd><span>Straight Line</span></div>
+      </div>
+      <div class="shortcutSection">
+        <h4>Help</h4>
+        <div class="shortcutRow"><kbd>?</kbd><span>Toggle This Panel</span></div>
+      </div>
+    </div>
+    <div class="modalActions">
+      <button id="shortcutsCloseBtn" type="button">Close</button>
+    </div>
+  </div>
+
   <div id="onionOptionsStash" aria-hidden="true">
     <div id="onionOptionsBlock">
       <div class="subhead">Onion Options</div>

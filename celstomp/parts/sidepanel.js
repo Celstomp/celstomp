@@ -15,6 +15,11 @@ document.getElementById('part-sidepanel').innerHTML = `
 
         <label class="chip"><input id="autofillToggle" type="checkbox" unchecked /> Autofill on draw</label>
 
+        <div class="layerControls">
+          <button id="soloLayerBtn" class="miniBtn" title="Solo Layer">Solo</button>
+          <button id="showAllLayersBtn" class="miniBtn" title="Show All">All</button>
+        </div>
+
         <label class="sideSelectRow" for="stabilizationLevel">
           <span>Stabilization Level</span>
           <select id="stabilizationLevel">
@@ -50,6 +55,12 @@ document.getElementById('part-sidepanel').innerHTML = `
         <button id="fitView" title="Reset size &amp; recenter">Recenter Canvas</button>
         <button id="exportMP4">Export MP4 </button>
         <button id="exportImgSeqBtn" class="button">Export Img Seq </button>
+
+        <div class="paletteControls">
+          <button id="newPaletteBtn" class="miniBtn">New Palette</button>
+          <button id="exportPaletteBtn" class="miniBtn">Export</button>
+          <button id="importPaletteBtn" class="miniBtn">Import</button>
+        </div>
 
       </div>
 

@@ -1,0 +1,1 @@
+- swatch does not highlight on layer swap

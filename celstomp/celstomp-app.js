@@ -1613,11 +1613,8 @@
                 e.stopPropagation();
                 const startHex = normalizeToHex(canvasBgColor);
                 requestAnimationFrame(() => {
-                    openLiveColorDialog({
-                        initialHex: startHex,
-                        onLive: hex => setCanvasBgColor(hex),
-                        onCommit: hex => setCanvasBgColor(hex),
-                        onCancel: () => setCanvasBgColor(startHex)
+                    openColorPickerAtElement(btn, startHex, hex => {
+                        setCanvasBgColor(hex);
                     });
                 });
             });

@@ -1346,7 +1346,6 @@
         let _brushPrevLastEvt = null;
         let _brushPrevRAF = 0;
         let _brushPrevLastXY = null;
-        let _brushPrevInnerCanvas = null;
         function brushShapeForType(kind) {
             const t = String(kind || "circle");
             if (t === "square" || t === "oval" || t === "oval-vertical" || t === "circle") return t;
@@ -1377,13 +1376,6 @@
             _brushPrevCanvas = inputCanvasEl;
             _brushPrevEl = document.getElementById("brushCursorPreview");
             if (!_brushPrevCanvas || !_brushPrevEl) return;
-            _brushPrevInnerCanvas = document.createElement("canvas");
-            _brushPrevInnerCanvas.id = "brushCursorPreviewCanvas";
-            _brushPrevInnerCanvas.style.width = "100%";
-            _brushPrevInnerCanvas.style.height = "100%";
-            _brushPrevInnerCanvas.style.display = "block";
-            _brushPrevInnerCanvas.style.pointerEvents = "none";
-            _brushPrevEl.replaceChildren(_brushPrevInnerCanvas);
             let hovering = false;
             let down = false;
             const show = () => {
@@ -1437,6 +1429,13 @@
             try {
                 eraserSizeInput?.addEventListener("input", () => scheduleBrushPreviewUpdate(true));
             } catch {}
+            document.addEventListener("change", e => {
+                const t = e.target;
+                if (!(t instanceof HTMLInputElement)) return;
+                if (t.name === "brush" || t.name === "tool") scheduleBrushPreviewUpdate(true);
+            }, {
+                passive: true
+            });
             hide();
         }
         function scheduleBrushPreviewUpdate(force = false) {
@@ -1457,11 +1456,9 @@
         function updateBrushPreview() {
             if (!_brushPrevEl || !_brushPrevCanvas) return;
             const toolKind = getActiveToolKindForPreview();
-            const SIMPLE_TOOLS = new Set([ "fill-eraser", "fill-brush", "lasso-fill", "lasso-erase" ]);
             const isBrush = toolKind === "brush";
             const isEraser = toolKind === "eraser";
-            const isSimple = SIMPLE_TOOLS.has(toolKind);
-            if (!isBrush && !isEraser && !isSimple) {
+            if (!isBrush && !isEraser) {
                 _brushPrevEl.style.display = "none";
                 return;
             }
@@ -1470,53 +1467,21 @@
             const cx = pt.x;
             const cy = pt.y;
             const z = typeof zoom === "number" && isFinite(zoom) ? zoom : 1;
-            let widthCssPx;
-            let heightCssPx;
-            if (isSimple) {
-                widthCssPx = 4;
-                heightCssPx = 4;
-            } else {
-                const sizeContentPx = Math.max(1, getBrushSizeForPreview(isEraser ? "eraser" : "brush"));
-                if (isBrush) {
-                    const shape = brushShapeForType(typeof brushType !== "undefined" ? brushType : "circle");
-                    const dim = brushShapeDimensions(shape, sizeContentPx);
-                    widthCssPx = Math.max(2, dim.w * z);
-                    heightCssPx = Math.max(2, dim.h * z);
-                } else {
-                    widthCssPx = Math.max(2, sizeContentPx * z);
-                    heightCssPx = widthCssPx;
-                }
-            }
-            _brushPrevEl.classList.toggle("simple", !!isSimple);
-            _brushPrevEl.classList.toggle("eraser", !!isEraser && !isSimple);
-            if (isBrush && !isSimple) {
-                _brushPrevEl.style.border = "none";
-                _brushPrevEl.style.boxShadow = "none";
-                if (_brushPrevInnerCanvas) _brushPrevInnerCanvas.style.display = "block";
-            } else {
-                _brushPrevEl.style.border = "";
-                _brushPrevEl.style.boxShadow = "";
-                if (_brushPrevInnerCanvas) _brushPrevInnerCanvas.style.display = "none";
-            }
+            const shape = brushShapeForType(typeof brushType !== "undefined" ? brushType : "circle");
+            const sizeContentPx = Math.max(1, getBrushSizeForPreview(isEraser ? "eraser" : "brush"));
+            const dim = brushShapeDimensions(shape, sizeContentPx);
+            const widthCssPx = Math.max(2, dim.w * z);
+            const heightCssPx = Math.max(2, dim.h * z);
+            _brushPrevEl.classList.remove("simple");
+            _brushPrevEl.classList.toggle("eraser", !!isEraser);
+            _brushPrevEl.style.border = "1px solid rgba(255,255,255,.95)";
+            _brushPrevEl.style.boxShadow = "0 0 0 1px rgba(0,0,0,.78)";
+            _brushPrevEl.style.borderStyle = isEraser ? "dashed" : "solid";
             _brushPrevEl.style.left = `${cx}px`;
             _brushPrevEl.style.top = `${cy}px`;
             _brushPrevEl.style.width = `${widthCssPx}px`;
             _brushPrevEl.style.height = `${heightCssPx}px`;
-            _brushPrevEl.style.borderRadius = isBrush && brushShapeForType(brushType) === "square" ? "0" : "999px";
-            if (_brushPrevInnerCanvas && isBrush && !isSimple) {
-                const sizeContentPx = Math.max(1, getBrushSizeForPreview("brush"));
-                const aaOn = getBrushAntiAliasEnabled();
-                const stamp = getBrushStamp(brushShapeForType(brushType), sizeContentPx, colorToHex(currentColor || "#ffffff"), aaOn);
-                const rw = Math.max(1, Math.round(widthCssPx));
-                const rh = Math.max(1, Math.round(heightCssPx));
-                if (_brushPrevInnerCanvas.width !== rw) _brushPrevInnerCanvas.width = rw;
-                if (_brushPrevInnerCanvas.height !== rh) _brushPrevInnerCanvas.height = rh;
-                const pctx = _brushPrevInnerCanvas.getContext("2d");
-                pctx.clearRect(0, 0, rw, rh);
-                pctx.imageSmoothingEnabled = !!aaOn;
-                pctx.globalAlpha = 1;
-                pctx.drawImage(stamp.canvas, 0, 0, stamp.w, stamp.h, 0, 0, rw, rh);
-            }
+            _brushPrevEl.style.borderRadius = shape === "square" ? "0" : "999px";
             _brushPrevEl.style.display = "block";
         }
         function framesToSF(f) {

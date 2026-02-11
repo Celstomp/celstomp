@@ -51,6 +51,7 @@ document.getElementById('part-sidepanel').innerHTML = `
           <button id="fillAll">Fill all cels</button>
 
         <label class="chip"><input id="autofillToggle" type="checkbox" unchecked /> Autofill on draw</label>
+        <label class="chip"><input id="trianglePickerToggle" type="checkbox" /> Triangle Picker</label>
 
         <div class="layerControls">
           <button id="soloLayerBtn" class="miniBtn" title="Solo Layer">Solo</button>

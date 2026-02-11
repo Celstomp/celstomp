@@ -751,6 +751,11 @@
             H: 180
         };
         let pickerInitializing = false;
+        let pickerShape = "square";
+        try {
+            const savedShape = localStorage.getItem("celstomp_picker_shape");
+            if (savedShape === "triangle") pickerShape = "triangle";
+        } catch {}
         const LAYER = {
             FILL: 0,
             COLOR: 1,
@@ -1150,6 +1155,7 @@
         };
         let _wheelGeom = null;
         let _wheelRingImg = null;
+        let _wheelTriangleCanvas = null;
         let _dragMode = null;
         function rememberLayerColorSafe() {
             try {
@@ -1239,6 +1245,45 @@
             }
             return img;
         }
+        function buildSVTriangleImage(geom) {
+            const { size, R, ringInner } = geom;
+            const triR = Math.floor(ringInner * 0.90);
+            const img = new ImageData(size, size);
+            const data = img.data;
+            const angH = (hsvPick.h - 90) * (Math.PI / 180);
+            const x1 = Math.cos(angH) * triR;
+            const y1 = Math.sin(angH) * triR;
+            const x2 = Math.cos(angH + 2 * Math.PI / 3) * triR;
+            const y2 = Math.sin(angH + 2 * Math.PI / 3) * triR;
+            const x3 = Math.cos(angH + 4 * Math.PI / 3) * triR;
+            const y3 = Math.sin(angH + 4 * Math.PI / 3) * triR;
+            const detT = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+            const minX = Math.floor(Math.min(x1, x2, x3) + R);
+            const maxX = Math.ceil(Math.max(x1, x2, x3) + R);
+            const minY = Math.floor(Math.min(y1, y2, y3) + R);
+            const maxY = Math.ceil(Math.max(y1, y2, y3) + R);
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    if (x < 0 || x >= size || y < 0 || y >= size) continue;
+                    const dx = x - R;
+                    const dy = y - R;
+                    const lambda1 = ((y2 - y3) * (dx - x3) + (x3 - x2) * (dy - y3)) / detT;
+                    const lambda2 = ((y3 - y1) * (dx - x3) + (x1 - x3) * (dy - y3)) / detT;
+                    const lambda3 = 1 - lambda1 - lambda2;
+                    if (lambda1 >= 0 && lambda2 >= 0 && lambda3 >= 0) {
+                        const vVal = lambda1 + lambda2;
+                        const sVal = vVal > 0.0001 ? (lambda1 / vVal) : 0;
+                        const rgb = hsvToRgb(hsvPick.h, sVal, vVal);
+                        const idx = (y * size + x) * 4;
+                        data[idx + 0] = rgb.r;
+                        data[idx + 1] = rgb.g;
+                        data[idx + 2] = rgb.b;
+                        data[idx + 3] = 255;
+                    }
+                }
+            }
+            return { img, vertices: [{x:x1,y:y1}, {x:x2,y:y2}, {x:x3,y:y3}], triR };
+        }
         function drawHSVWheel() {
             if (!hsvWheelCanvas) return;
             const ctx = hsvWheelCanvas.getContext("2d");
@@ -1251,15 +1296,40 @@
                 _wheelRingImg._size = geom.size;
             }
             ctx.putImageData(_wheelRingImg, 0, 0);
-            const svImg = buildSVSquareImage(geom);
-            ctx.putImageData(svImg, geom.sqLeft, geom.sqTop);
-            ctx.save();
-            ctx.strokeStyle = "rgba(255,255,255,0.12)";
-            ctx.lineWidth = Math.max(1, geom.size * .004);
-            ctx.strokeRect(geom.sqLeft + .5, geom.sqTop + .5, geom.sqSize - 1, geom.sqSize - 1);
-            ctx.restore();
-            const mx = geom.sqLeft + hsvPick.s * geom.sqSize;
-            const my = geom.sqTop + (1 - hsvPick.v) * geom.sqSize;
+            let triData = null;
+            if (pickerShape === "triangle") {
+                triData = buildSVTriangleImage(geom);
+                if (!_wheelTriangleCanvas) _wheelTriangleCanvas = document.createElement("canvas");
+                if (_wheelTriangleCanvas.width !== geom.size) {
+                    _wheelTriangleCanvas.width = geom.size;
+                    _wheelTriangleCanvas.height = geom.size;
+                }
+                _wheelTriangleCanvas.getContext("2d").putImageData(triData.img, 0, 0);
+                ctx.drawImage(_wheelTriangleCanvas, 0, 0);
+            } else {
+                const svImg = buildSVSquareImage(geom);
+                ctx.putImageData(svImg, geom.sqLeft, geom.sqTop);
+                ctx.save();
+                ctx.strokeStyle = "rgba(255,255,255,0.12)";
+                ctx.lineWidth = Math.max(1, geom.size * .004);
+                ctx.strokeRect(geom.sqLeft + .5, geom.sqTop + .5, geom.sqSize - 1, geom.sqSize - 1);
+                ctx.restore();
+            }
+
+            let mx, my;
+            if (pickerShape === "triangle" && triData) {
+                const v = hsvPick.v;
+                const s = hsvPick.s;
+                const l1 = s * v;
+                const l2 = v * (1 - s);
+                const l3 = 1 - v;
+                const vs = triData.vertices;
+                mx = geom.R + l1 * vs[0].x + l2 * vs[1].x + l3 * vs[2].x;
+                my = geom.R + l1 * vs[0].y + l2 * vs[1].y + l3 * vs[2].y;
+            } else {
+                mx = geom.sqLeft + hsvPick.s * geom.sqSize;
+                my = geom.sqTop + (1 - hsvPick.v) * geom.sqSize;
+            }
             ctx.save();
             ctx.beginPath();
             ctx.arc(mx, my, Math.max(5, geom.size * .02), 0, Math.PI * 2);
@@ -1302,6 +1372,23 @@
             const dx = x - g.R;
             const dy = y - g.R;
             const dist = Math.hypot(dx, dy);
+            if (pickerShape === "triangle") {
+                if (dist >= g.ringInner && dist <= g.ringOuter) return "hue";
+                const triR = Math.floor(g.ringInner * 0.90);
+                const angH = (hsvPick.h - 90) * (Math.PI / 180);
+                const x1 = Math.cos(angH) * triR;
+                const y1 = Math.sin(angH) * triR;
+                const x2 = Math.cos(angH + 2 * Math.PI / 3) * triR;
+                const y2 = Math.sin(angH + 2 * Math.PI / 3) * triR;
+                const x3 = Math.cos(angH + 4 * Math.PI / 3) * triR;
+                const y3 = Math.sin(angH + 4 * Math.PI / 3) * triR;
+                const detT = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+                const l1 = ((y2 - y3) * (dx - x3) + (x3 - x2) * (dy - y3)) / detT;
+                const l2 = ((y3 - y1) * (dx - x3) + (x1 - x3) * (dy - y3)) / detT;
+                const l3 = 1 - l1 - l2;
+                if (l1 >= 0 && l2 >= 0 && l3 >= 0) return "sv";
+                return null;
+            }
             const inRing = dist >= g.ringInner && dist <= g.ringOuter;
             const inSquare = x >= g.sqLeft && x <= g.sqLeft + g.sqSize && y >= g.sqTop && y <= g.sqTop + g.sqSize;
             if (inSquare) return "sv";
@@ -1322,10 +1409,34 @@
         }
         function updateFromSVPoint(x, y) {
             const g = _wheelGeom;
-            const sx = clamp((x - g.sqLeft) / g.sqSize, 0, 1);
-            const vy = clamp(1 - (y - g.sqTop) / g.sqSize, 0, 1);
-            hsvPick.s = sx;
-            hsvPick.v = vy;
+            if (pickerShape === "triangle") {
+                const dx = x - g.R;
+                const dy = y - g.R;
+                const triR = Math.floor(g.ringInner * 0.90);
+                const angH = (hsvPick.h - 90) * (Math.PI / 180);
+                const x1 = Math.cos(angH) * triR;
+                const y1 = Math.sin(angH) * triR;
+                const x2 = Math.cos(angH + 2 * Math.PI / 3) * triR;
+                const y2 = Math.sin(angH + 2 * Math.PI / 3) * triR;
+                const x3 = Math.cos(angH + 4 * Math.PI / 3) * triR;
+                const y3 = Math.sin(angH + 4 * Math.PI / 3) * triR;
+                const detT = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+                const l1 = ((y2 - y3) * (dx - x3) + (x3 - x2) * (dy - y3)) / detT;
+                const l2 = ((y3 - y1) * (dx - x3) + (x1 - x3) * (dy - y3)) / detT;
+                
+                let cl1 = l1, cl2 = l2, cl3 = 1 - l1 - l2;
+                if (cl1 < 0) { cl1 = 0; cl2 = l2 / (l2 + cl3); cl3 = 1 - cl2; }
+                else if (cl2 < 0) { cl2 = 0; cl1 = cl1 / (cl1 + cl3); cl3 = 1 - cl1; }
+                else if (cl3 < 0) { cl3 = 0; cl1 = cl1 / (cl1 + cl2); cl2 = 1 - cl1; }
+
+                hsvPick.v = cl1 + cl2;
+                hsvPick.s = hsvPick.v > 0.0001 ? (cl1 / hsvPick.v) : 0;
+            } else {
+                const sx = clamp((x - g.sqLeft) / g.sqSize, 0, 1);
+                const vy = clamp(1 - (y - g.sqTop) / g.sqSize, 0, 1);
+                hsvPick.s = sx;
+                hsvPick.v = vy;
+            }
             const rgb = hsvToRgb(hsvPick.h, hsvPick.s, hsvPick.v);
             currentColor = rgbToHex(rgb.r, rgb.g, rgb.b);
             setColorSwatch();
@@ -1370,6 +1481,17 @@
                 _dragMode = null;
             });
             new ResizeObserver(() => drawHSVWheel()).observe(hsvWheelWrap);
+            const triCheck = document.getElementById("trianglePickerToggle");
+            if (triCheck) {
+                triCheck.checked = pickerShape === "triangle";
+                triCheck.addEventListener("change", e => {
+                    pickerShape = e.target.checked ? "triangle" : "square";
+                    try {
+                        localStorage.setItem("celstomp_picker_shape", pickerShape);
+                    } catch {}
+                    drawHSVWheel();
+                });
+            }
         }
         let _brushPrevEl = null;
         let _brushPrevCanvas = null;

@@ -8,7 +8,7 @@
         './js/ui/island-helper.js',
         './js/ui/swatch-handler.js',
         './js/ui/menu-wires.js',
-        './js/ui/qol-wiring-handler.js',
+        './js/ui/interaction-shortcuts.js',
         './js/ui/dock-helper.js',
         './js/ui/mobile-native-zoom-guard.js',
         './js/ui/mount-island-dock.js',

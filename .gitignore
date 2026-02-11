@@ -1,0 +1,6 @@
+node_modules/
+.vite/
+
+# Vite build output
+dist/
+celstomp/dist/

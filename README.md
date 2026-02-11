@@ -33,7 +33,7 @@ https://ginyo.space/celstomp/
 | Person | Role | Links |
 |---|---|---|
 | <img src="https://github.com/ginyoa.png?size=80" width="48" height="48" style="border-radius:999px;" /> <br> **Ginyoa** | Project Lead, Creator, Concept Artist | [GitHub](https://github.com/Ginyoa) · [Website](https://ginyo.space/) |
-| <img src="https://github.com/immalloy.png?size=80" width="48" height="48" style="border-radius:999px;" /> <br> **ImMalloy** | Coder, Most the Site without AI | [GitHub](https://github.com/ImMalloy) · [Website](https://immalloy.nichesite.org/) · [Play Your Little Oyachi!](https://oyachigame.nichesite.org/) |
+| <img src="https://github.com/immalloy.png?size=80" width="48" height="48" style="border-radius:999px;" /> <br> **ImMalloy** | Coder and also Silly Artist | [GitHub](https://github.com/ImMalloy) · [Website](https://immalloy.nichesite.org/) · [Play Your Little Oyachi!](https://oyachigame.nichesite.org/) |
 | <img src="https://github.com/Microck.png?size=80" width="48" height="48" style="border-radius:999px;" /> <br> **Microck** | Coder, Improved reliability and UX and Fixed Bugs | [GitHub](https://github.com/Microck) · [Website](https://micr.dev/) |
 | <img src="https://github.com/IvBautistaS.png?size=80" width="48" height="48" style="border-radius:999px;" /> <br> **IvBautistaS** | Refactored both Javascript and CSS | [GitHub](https://github.com/IvBautistaS) |
 

@@ -68,7 +68,6 @@ function updateFromSVPoint(x, y) {
     const g = _wheelGeom;
 
     if (pickerShape === "triangle") {
-        console.log("triangle hit test");
         const dx = x - g.R;
         const dy = y - g.R;
         const triR = Math.floor(g.ringInner * 0.90);

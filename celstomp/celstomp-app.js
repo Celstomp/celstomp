@@ -339,13 +339,13 @@
         
         
         function renderBounds() {
-            setTransform(bctx);
+            setTransform(fxctx);
             bctx.fillStyle = "#2a2f38";
             bctx.strokeStyle = "#3b4759";
             bctx.lineWidth = 2 / Math.max(getZoom(), 1);
             bctx.fillRect(0, 0, contentW, contentH);
             bctx.strokeRect(0, 0, contentW, contentH);
-            drawRectSelectionOverlay(bctx);
+            drawRectSelectionOverlay(fxctx);
         }
         
         // tba: rect, lasso, and onion should have their own locations in code

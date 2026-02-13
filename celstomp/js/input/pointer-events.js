@@ -823,6 +823,7 @@ function clearRectSelection() {
     queueRenderAll();
 }
 function drawRectSelectionOverlay(ctx) {
+    console.warn("drawing rect select overlay...");
     if (!rectSelection.active) return;
     ctx.save();
     ctx.lineWidth = Math.max(1 / Math.max(getZoom(), 1), .75);

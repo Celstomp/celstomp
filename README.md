@@ -55,51 +55,31 @@ https://ginyo.space/celstomp/
 Clone the repository:
 
 ```bash
-git clone https://github.com/ginyoa/celstomp_v1.git
+git clone https://github.com/ginyoagoldie/celstomp_v1.git
 cd celstomp_v1
 ```
 
-#### Using Vite (recommended)
-
-```bash
-npm install
-npm run dev
-```
-
-The dev server will start at http://localhost:5173
-
-To create a production build:
-
-```bash
-npm run build
-npm run preview   # preview the built output
-```
-
-#### Using Python (no Node required)
-
-##### Linux / Mac (Terminal)
+#### Linux / Mac (Terminal)
 ```bash
 ./run-dev.command
 ```
 
-##### Windows
-Double-click `run-dev.bat` or run from command prompt:
+#### Windows
+Double-click `run-dev.bat`
+
+Or run from command prompt:
 ```cmd
 run-dev.bat
 ```
 
-##### Mac (Double-click)
+#### Mac (Double-click)
 Double-click `run-dev.command` in Finder
 
-The Python server will start at http://localhost:8000
+The server will start at http://localhost:8000
 
 ### Requirements
-
-**Vite workflow:** Node.js 18+ and npm
-
-**Python workflow:** Python 3.x (most systems have this pre-installed)
-
-**Browser:** Chrome, Firefox, Safari, or Edge
+- Python 3.x (most systems have this pre-installed)
+- web browser (Chrome, Firefox, Safari, Edge)
 
 ## License
 

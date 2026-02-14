@@ -68,40 +68,22 @@ Feature suggestions are welcome! Please:
 git clone https://github.com/YOUR_USERNAME/celstomp_v1.git
 cd celstomp_v1
 
-# Using Vite (recommended)
-npm install
-npm run dev          # starts at http://localhost:5173
-
-# Or using the legacy Python server (no Node required)
+# Run the development server
 ./run-dev.command    # Linux/Mac
 run-dev.bat          # Windows
 ```
+
+The server will start at `http://localhost:8000`
 
 ### Project Structure
 
 ```
 celstomp_v1/
-├── celstomp/                # Main application
-│   ├── css/                 # Stylesheets
-│   ├── icons/               # Icons and images
-│   ├── parts/               # HTML partial templates
-│   ├── js/
-│   │   ├── core/            # Shared primitives and state helpers
-│   │   ├── ui/              # UI wiring, menus, island, shortcuts
-│   │   ├── editor/          # Timeline, layers, history, canvas, export
-│   │   ├── tools/           # Brush, eraser, lasso behavior
-│   │   ├── input/           # Pointer event plumbing
-│   │   ├── html-loader.js   # Boot/script loader
-│   │   ├── init.js          # Service worker registration
-│   │   └── omggif.js        # GIF encoder (vendor)
-│   ├── celstomp-app.js      # Main app entry
-│   ├── celstomp-autosave.js # Autosave logic
-│   ├── celstomp-imgseq.js   # Image sequence export
-│   └── index.html           # App shell
-├── package.json             # Vite build config
-├── vite.config.mjs          # Vite settings
-├── run-dev.command           # Legacy dev server (Mac/Linux)
-├── run-dev.bat               # Legacy dev server (Windows)
+├── celstomp/           # Main application
+│   ├── css/           # Stylesheets
+│   ├── js/            # JavaScript files
+│   ├── icons/         # Icons and images
+│   └── parts/         # HTML partials
 ├── LICENSE
 └── README.md
 ```

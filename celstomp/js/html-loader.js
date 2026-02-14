@@ -12,47 +12,13 @@
         './parts/modals.js'
     ];
 
-    const barrelScripts = [
-        './js/core/index.js',
-        './js/ui/index.js',
-        './js/editor/index.js',
-        './js/tools/index.js',
-        './js/input/index.js'
-    ];
-
-    const runtimeScripts = [
+    const appScripts = [
+        './js/ui-components.js',
         './js/omggif.js',
         './celstomp-imgseq.js',
         './celstomp-autosave.js',
         './celstomp-app.js'
     ];
-
-    function getBarrel(name) {
-        const barrels = window.__celstompBarrels || {};
-        const scripts = barrels[name];
-        if (!Array.isArray(scripts)) {
-            throw new Error(`Missing script barrel: ${name}`);
-        }
-        return scripts;
-    }
-
-    function collectAppScripts() {
-        // Preserve previous load order while keeping per-folder script lists centralized.
-        return [
-            ...getBarrel('core'),
-            ...getBarrel('ui').slice(0, 2),
-            ...getBarrel('editor').slice(0, 2),
-            ...getBarrel('ui').slice(2, 3),
-            ...getBarrel('editor').slice(2, 3),
-            ...getBarrel('tools').slice(0, 1),
-            ...getBarrel('editor').slice(3, 4),
-            ...getBarrel('tools').slice(1),
-            ...getBarrel('editor').slice(4),
-            ...getBarrel('input'),
-            ...getBarrel('ui').slice(3),
-            ...runtimeScripts
-        ];
-    }
 
     function loadScript(src) {
         return new Promise((resolve, reject) => {
@@ -180,7 +146,7 @@
         });
     }
 
-    async function loadAppScripts(appScripts) {
+    async function loadAppScripts() {
         for (const src of appScripts) {
             await loadScript(src);
         }
@@ -196,11 +162,7 @@
                 await wireMobileGate();
             }
 
-            for (const src of barrelScripts) {
-                await loadScript(src);
-            }
-
-            await loadAppScripts(collectAppScripts());
+            await loadAppScripts();
 
             console.log('[celstomp] All parts and scripts loaded via JS injection.');
 

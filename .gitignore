@@ -1,9 +1,0 @@
-node_modules/
-.vite/
-
-# Vite build output
-dist/
-celstomp/dist/
-
-# mac
-.DS_Store

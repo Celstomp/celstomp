@@ -118,7 +118,7 @@ async function exportClip(mime, ext) {
 
 
 function buildGifPalette(quality = "high") {
-  const q = String(quality || "high").toLowerCase();
+  const q = (quality || "high").toLowerCase();
   const levels = q === "low" ? 4 : q === "medium" ? 5 : 6;
   const out = [ 0x000000 ];
   const step = levels > 1 ? 255 / (levels - 1) : 255;

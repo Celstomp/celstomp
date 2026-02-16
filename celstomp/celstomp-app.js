@@ -19,9 +19,6 @@
     }
     
     ready(() => {
-        let contentW = 960;
-        let contentH = 540;
-        
         const stageEl = $("stage");
 
         function ensureChild(parent, el) {

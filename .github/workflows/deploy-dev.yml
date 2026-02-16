@@ -32,7 +32,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
-          local-dir: ./
+          local-dir: ./celstomp/
           server-dir: /celstomp-indev.nichesite.org/htdocs/
           log-level: verbose
           exclude: |

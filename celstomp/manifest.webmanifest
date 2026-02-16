@@ -1,36 +1,19 @@
 {
+  "id": "./",
   "name": "Celstomp - 2D Animation Tool",
   "short_name": "Celstomp",
   "description": "Free browser-based 2D animation tool for traditional frame-by-frame animation with onion skinning, layers, and MP4 export.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "landscape",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "categories": ["productivity", "graphics", "design"],
-  "lang": "en",
-  "dir": "ltr",
   "icons": [
-    { 
-      "src": "./icons/favicon.ico", 
-      "sizes": "any", 
+    {
+      "src": "./icons/favicon.ico",
+      "sizes": "any",
       "type": "image/x-icon",
       "purpose": "any"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "./icons/screenshot-wide.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "./icons/screenshot-narrow.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow"
     }
   ]
 }

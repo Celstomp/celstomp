@@ -1,4 +1,4 @@
-const CACHE_VERSION = "celstomp-v5";
+const CACHE_VERSION = "celstomp-v6";
 
 const APP_SHELL = [ "./", "./index.html", "./celstomp-styles.css", "./celstomp-imgseq.js", "./celstomp-autosave.js", "./celstomp-app.js", "./manifest.webmanifest", "./icons/favicon.ico" ];
 
@@ -21,8 +21,10 @@ self.addEventListener("fetch", event => {
     event.respondWith(caches.match(req).then(cached => {
         if (cached) return cached;
         return fetch(req).then(res => {
-            const copy = res.clone();
-            caches.open(CACHE_VERSION).then(c => c.put(req, copy));
+            if (res.ok) {
+                const copy = res.clone();
+                caches.open(CACHE_VERSION).then(c => c.put(req, copy));
+            }
             return res;
         }).catch(() => {
             if (req.mode === "navigate") return caches.match("./index.html");

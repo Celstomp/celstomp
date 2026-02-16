@@ -1,6 +1,6 @@
-const CACHE_VERSION = "celstomp-v6";
+const CACHE_VERSION = "celstomp-v7";
 
-const APP_SHELL = [ "./", "./index.html", "./celstomp-styles.css", "./celstomp-imgseq.js", "./celstomp-autosave.js", "./celstomp-app.js", "./manifest.webmanifest", "./icons/favicon.ico" ];
+const APP_SHELL = [ "./", "./index.html", "./celstomp-styles.css", "./celstomp-imgseq.js", "./celstomp-autosave.js", "./celstomp-app.js", "./icons/favicon.ico" ];
 
 self.addEventListener("install", event => {
     event.waitUntil(caches.open(CACHE_VERSION).then(async c => {
@@ -18,12 +18,21 @@ self.addEventListener("fetch", event => {
     const req = event.request;
     const url = new URL(req.url);
     if (url.origin !== self.location.origin) return;
+
+    const isManifestRequest = req.destination === "manifest" || url.pathname.endsWith("/manifest.webmanifest");
+    if (isManifestRequest) return;
+
     event.respondWith(caches.match(req).then(cached => {
         if (cached) return cached;
         return fetch(req).then(res => {
             if (res.ok) {
-                const copy = res.clone();
-                caches.open(CACHE_VERSION).then(c => c.put(req, copy));
+                const contentType = (res.headers.get("content-type") || "").toLowerCase();
+                const isDocument = req.mode === "navigate" || req.destination === "document";
+                const isHtml = contentType.includes("text/html");
+                if (isDocument || !isHtml) {
+                    const copy = res.clone();
+                    caches.open(CACHE_VERSION).then(c => c.put(req, copy));
+                }
             }
             return res;
         }).catch(() => {

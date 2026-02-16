@@ -1,4 +1,4 @@
-# .github/workflows/deploy-dev.yml
+# .github/workflows/deploy-indev.yml
 name: Deploy to Development Testing Site
 
 on:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-celstomp-indev
+  group: deploy-celstomp-development
   cancel-in-progress: true
 
 permissions:
@@ -15,8 +15,8 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy (indev)
-    environment: indev
+    name: Deploy (development)
+    environment: development
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -33,7 +33,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
           local-dir: ./
-          server-dir: celstomp-indev.nichesite.org/htdocs/
+          server-dir: /celstomp-indev.nichesite.org/htdocs/
           log-level: verbose
           exclude: |
             **/.git/**

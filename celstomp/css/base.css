@@ -45,6 +45,12 @@ select{
   background-repeat: no-repeat;
 }
 
+select option,
+select optgroup{
+  color: #111;
+  background: #fff;
+}
+
 input[type="checkbox"]{
   appearance: none;
   -webkit-appearance: none;

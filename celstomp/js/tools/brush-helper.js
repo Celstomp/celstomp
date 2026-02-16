@@ -82,12 +82,12 @@ function initBrushCursorPreview(inputCanvasEl) {
     }, {
         passive: true
     });
-    try {
+
+    if (typeof $ === "function") {
         $("brushSizeInput")?.addEventListener("input", () => scheduleBrushPreviewUpdate(true));
-    } catch {}
-    try {
         $("eraserSizeInput")?.addEventListener("input", () => scheduleBrushPreviewUpdate(true));
-    } catch {}
+    }
+
     document.addEventListener("change", e => {
         const t = e.target;
         if (!(t instanceof HTMLInputElement)) return;
@@ -96,8 +96,8 @@ function initBrushCursorPreview(inputCanvasEl) {
         passive: true
     });
     hide();
-  }
-  
+}
+
 
 function brushShapeForType(kind) {
     const t = String(kind || "circle");
@@ -166,9 +166,7 @@ function stampLine(ctx, x0, y0, x1, y1, sourceSettings, color, alpha = 1, compos
         const py = Math.round(y0 + ny * i - stamp.oy);
         ctx.drawImage(stamp.canvas, px, py);
     }
-    try {
-        markGlobalHistoryDirty();
-    } catch {}
+    if (typeof markGlobalHistoryDirty === "function") markGlobalHistoryDirty();
     ctx.restore();
 }
 
@@ -176,6 +174,7 @@ function normalizedBrushRenderSettings(source) {
     return mergeBrushSettings(DEFAULT_TOOL_BRUSH_SETTINGS, source || {});
 }
 
+const MAX_CACHE_SIZE = 50;
 const _brushMaskCache = new Map();
 const _brushStampCache = new Map();
 function brushMaskCacheKey(settings) {
@@ -189,7 +188,11 @@ function getBrushMask(sourceSettings) {
     const settings = normalizedBrushRenderSettings(sourceSettings);
     const key = brushMaskCacheKey(settings);
     const cached = _brushMaskCache.get(key);
-    if (cached) return cached;
+    if (cached) {
+        _brushMaskCache.delete(key);
+        _brushMaskCache.set(key, cached);
+        return cached;
+    }
 
     const dim = brushShapeDimensions(settings.shape, settings.size);
     const w = dim.w;
@@ -265,6 +268,10 @@ function getBrushMask(sourceSettings) {
         ox: Math.floor(outCanvas.width / 2),
         oy: Math.floor(outCanvas.height / 2)
     };
+    if (_brushMaskCache.size >= MAX_CACHE_SIZE) {
+        const firstKey = _brushMaskCache.keys().next().value;
+        _brushMaskCache.delete(firstKey);
+    }
     _brushMaskCache.set(key, out);
     return out;
 }
@@ -273,7 +280,11 @@ function getBrushStamp(sourceSettings, colorRaw) {
     const color = colorToHex(colorRaw || "#000000");
     const key = brushStampCacheKey(settings, color);
     const cached = _brushStampCache.get(key);
-    if (cached) return cached;
+    if (cached) {
+        _brushStampCache.delete(key);
+        _brushStampCache.set(key, cached);
+        return cached;
+    }
 
     const mask = getBrushMask(settings);
     const canvas = document.createElement("canvas");
@@ -293,6 +304,10 @@ function getBrushStamp(sourceSettings, colorRaw) {
         ox: mask.ox,
         oy: mask.oy
     };
+    if (_brushStampCache.size >= MAX_CACHE_SIZE) {
+        const firstKey = _brushStampCache.keys().next().value;
+        _brushStampCache.delete(firstKey);
+    }
     _brushStampCache.set(key, out);
     return out;
 }
@@ -312,48 +327,113 @@ function getBrushSizeForPreview(toolKind) {
     if (toolKind === "eraser") return Number(eraserSettings?.size ?? eraserSize ?? 8);
     return Number(brushSettings?.size ?? brushSize ?? 6);
 }
+const TOOL_ICONS = {
+    "fill-brush": "tool-fill-brush.svg",
+    "fill-eraser": "tool-fill-eraser.svg",
+    "lasso-fill": "tool-lasso-fill.svg",
+    "lasso-erase": "tool-lasso-erase.svg",
+    "rect-select": "tool-rect-select.svg",
+    "eyedropper": "tool-eyedropper.svg"
+};
+
 function updateBrushPreview() {
     if (!_brushPrevEl || !_brushPrevCanvas) return;
     const toolKind = getActiveToolKindForPreview();
     const isBrush = toolKind === "brush";
     const isEraser = toolKind === "eraser";
-    if (!isBrush && !isEraser) {
+    const icon = TOOL_ICONS[toolKind];
+    const isSpecial = icon || toolKind === "hand";
+
+    if (!isBrush && !isEraser && !isSpecial) {
         _brushPrevEl.style.display = "none";
         return;
     }
+
     const pt = _brushPrevLastXY;
     if (!pt) return;
-    const cx = pt.x;
-    const cy = pt.y;
+    const { x: cx, y: cy } = pt;
     const z = typeof getZoom() === "number" && isFinite(getZoom()) ? getZoom() : 1;
+
+    // Base styles common to all previews
+    Object.assign(_brushPrevEl.style, {
+        display: "block",
+        left: `${cx}px`,
+        top: `${cy}px`,
+        clipPath: "none",
+        webkitMaskImage: "none",
+        maskImage: "none",
+        background: "none"
+    });
+
+    if (isSpecial) {
+        _brushPrevEl.classList.add("simple");
+        _brushPrevEl.classList.remove("eraser");
+
+        if (icon) {
+            Object.assign(_brushPrevEl.style, {
+                width: "22px",
+                height: "22px",
+                border: "none",
+                boxShadow: "none",
+                borderRadius: "0",
+                background: "rgba(255,255,255,0.92)",
+                webkitMaskImage: `url(/icons/${icon})`,
+                webkitMaskSize: "contain",
+                webkitMaskRepeat: "no-repeat",
+                webkitMaskPosition: "center",
+                maskImage: `url(/icons/${icon})`,
+                maskSize: "contain",
+                maskRepeat: "no-repeat",
+                maskPosition: "center",
+                transform: "translate(-50%, -50%)"
+            });
+        } else {
+            // Fallback for tools like 'hand'
+            Object.assign(_brushPrevEl.style, {
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,.95)",
+                boxShadow: "0 0 0 1px rgba(0,0,0,.78)",
+                borderStyle: "solid",
+                transform: "translate(-50%, -50%)"
+            });
+        }
+        return;
+    }
+
     const settings = isEraser ? eraserSettings : brushSettings;
     const renderSettings = normalizedBrushRenderSettings(settings);
     const shape = brushShapeForType(renderSettings.shape || "circle");
     const sizeContentPx = Math.max(1, renderSettings.size || getBrushSizeForPreview(isEraser ? "eraser" : "brush"));
     const dim = brushShapeDimensions(shape, sizeContentPx);
-    const widthCssPx = Math.max(2, dim.w * z);
-    const heightCssPx = Math.max(2, dim.h * z);
+
     _brushPrevEl.classList.remove("simple");
-    _brushPrevEl.classList.toggle("eraser", !!isEraser);
-    _brushPrevEl.style.border = "1px solid rgba(255,255,255,.95)";
-    _brushPrevEl.style.boxShadow = "0 0 0 1px rgba(0,0,0,.78)";
-    _brushPrevEl.style.borderStyle = isEraser ? "dashed" : "solid";
-    _brushPrevEl.style.left = `${cx}px`;
-    _brushPrevEl.style.top = `${cy}px`;
-    _brushPrevEl.style.width = `${widthCssPx}px`;
-    _brushPrevEl.style.height = `${heightCssPx}px`;
-    _brushPrevEl.style.borderRadius = "0";
-    _brushPrevEl.style.clipPath = "none";
+    _brushPrevEl.classList.toggle("eraser", isEraser);
+
     let shapeRotation = 0;
+    let borderRadius = "0";
+    let clipPath = "none";
+
     if (shape === "circle" || shape === "oval-h" || shape === "oval-v") {
-        _brushPrevEl.style.borderRadius = "999px";
+        borderRadius = "999px";
     } else if (shape === "diamond") {
         shapeRotation = 45;
     } else if (shape === "triangle") {
-        _brushPrevEl.style.clipPath = "polygon(50% 0%, 100% 100%, 0% 100%)";
+        clipPath = "polygon(50% 0%, 100% 100%, 0% 100%)";
     }
-    _brushPrevEl.style.transform = `translate(-50%, -50%) rotate(${shapeRotation + (renderSettings.angle || 0)}deg)`;
-    _brushPrevEl.style.display = "block";
+
+    Object.assign(_brushPrevEl.style, {
+        width: `${Math.max(2, dim.w * z)}px`,
+        height: `${Math.max(2, dim.h * z)}px`,
+        border: "1px solid rgba(255,255,255,.95)",
+        boxShadow: "0 0 0 1px rgba(0,0,0,.78)",
+        borderStyle: isEraser ? "dashed" : "solid",
+        borderRadius,
+        clipPath,
+        transform: `translate(-50%, -50%) rotate(${shapeRotation + (renderSettings.angle || 0)}deg)`
+    });
 }
 
 function getBrushAntiAliasEnabled() {
@@ -442,9 +522,7 @@ function ensureBrushCtxMenu() {
     aaEl.addEventListener("change", () => {
         antiAlias = !!aaEl.checked;
         syncMainUIFromState();
-        try {
-            renderAll?.();
-        } catch {}
+        if (typeof renderAll === "function") renderAll();
     });
     pSizeEl.addEventListener("change", () => {
         usePressureSize = !!pSizeEl.checked;
@@ -463,9 +541,7 @@ function ensureBrushCtxMenu() {
         usePressureOpacity = false;
         syncMenuFromState();
         syncMainUIFromState();
-        try {
-            renderAll?.();
-        } catch {}
+        if (typeof renderAll === "function") renderAll();
     });
     document.addEventListener("mousedown", e => {
         if (m.hidden) return;
@@ -483,16 +559,12 @@ function ensureBrushCtxMenu() {
     return m;
 }
 function openBrushCtxMenu(ev, anchorEl) {
-    try {
-        closeEraserCtxMenu?.();
-    } catch {}
+    if (typeof closeEraserCtxMenu === "function") closeEraserCtxMenu();
     const m = ensureBrushCtxMenu();
     _brushCtxState = {
         anchorEl: anchorEl || null
     };
-    try {
-        m._syncFromState?.();
-    } catch {}
+    if (typeof m._syncFromState === "function") m._syncFromState();
     m.hidden = false;
     m.style.left = "0px";
     m.style.top = "0px";
@@ -505,11 +577,10 @@ function openBrushCtxMenu(ev, anchorEl) {
     if (y + r.height + pad > vh) y = Math.max(pad, vh - r.height - pad);
     m.style.left = `${x}px`;
     m.style.top = `${y}px`;
-    try {
-        m.querySelector("#bcmSize")?.focus({
-            preventScroll: true
-        });
-    } catch {}
+
+    m.querySelector("#bcmSize")?.focus({
+        preventScroll: true
+    });
 }
 function closeBrushCtxMenu() {
     if (_brushCtxMenu) _brushCtxMenu.hidden = true;

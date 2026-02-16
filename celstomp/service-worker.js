@@ -1,6 +1,6 @@
-const CACHE_VERSION = "celstomp-v7";
+const CACHE_VERSION = "celstomp-v8";
 
-const APP_SHELL = [ "./", "./index.html", "./celstomp-styles.css", "./celstomp-imgseq.js", "./celstomp-autosave.js", "./celstomp-app.js", "./icons/favicon.ico" ];
+const APP_SHELL = [ "./", "./index.html", "./css/main.css", "./celstomp-imgseq.js", "./celstomp-autosave.js", "./celstomp-app.js", "./icons/favicon.ico" ];
 
 self.addEventListener("install", event => {
     event.waitUntil(caches.open(CACHE_VERSION).then(async c => {

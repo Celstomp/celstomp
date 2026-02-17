@@ -12,6 +12,232 @@ let brushSize = 3;
 let autofill = false;
 
 let trailPoints = [];
+let lineToolStart = null;
+let lineToolPreview = null;
+let rectToolStart = null;
+let rectToolPreview = null;
+let gridEnabled = false;
+let gridSize = 32;
+let gridSnap = false;
+let rulersEnabled = false;
+let guides = [];
+let draggingGuide = null;
+let guideSnap = false;
+
+let textEntryOverlay = null;
+let textEntryInput = null;
+let textEntryTarget = null;
+let textEntryFamily = null;
+let textEntrySize = null;
+let textEntryWeight = null;
+let textEntryItalic = null;
+let textEntryAlign = null;
+let textEntryStroke = null;
+let textEntryStrokeWidth = null;
+let textEntries = [];
+
+let textToolOptions = {
+    family: "system-ui, sans-serif",
+    size: 22,
+    weight: "400",
+    italic: false,
+    align: "left",
+    stroke: false,
+    strokeWidth: 2
+};
+
+function normalizeTextOptions(opts) {
+    return {
+        family: opts?.family || "system-ui, sans-serif",
+        size: Math.max(8, Math.min(240, parseInt(opts?.size ?? 22, 10) || 22)),
+        weight: String(opts?.weight || "400"),
+        italic: !!opts?.italic,
+        align: opts?.align || "left",
+        stroke: !!opts?.stroke,
+        strokeWidth: Math.max(1, Math.min(20, parseInt(opts?.strokeWidth ?? 2, 10) || 2))
+    };
+}
+
+function buildTextFont(opts) {
+    return `${opts.italic ? "italic " : ""}${opts.weight} ${opts.size}px ${opts.family}`;
+}
+
+function applyTextStyle(ctx, opts, hex) {
+    ctx.fillStyle = hex;
+    ctx.textBaseline = "top";
+    ctx.textAlign = opts.align;
+    ctx.font = buildTextFont(opts);
+}
+
+function measureTextBounds(ctx, x, y, text, opts) {
+    const metrics = ctx.measureText(text || " ");
+    const textW = Math.max(1, Math.ceil(metrics.width || 1));
+    const textH = Math.max(1, Math.ceil((metrics.actualBoundingBoxAscent || opts.size * 0.8) + (metrics.actualBoundingBoxDescent || opts.size * 0.25)));
+    let left = x;
+    if (opts.align === "center") left = x - textW / 2;
+    if (opts.align === "right") left = x - textW;
+    const pad = opts.stroke ? opts.strokeWidth + 2 : 2;
+    const x0 = Math.max(0, Math.floor(left - pad));
+    const y0 = Math.max(0, Math.floor(y - pad));
+    const x1 = Math.min(contentW, Math.ceil(left + textW + pad));
+    const y1 = Math.min(contentH, Math.ceil(y + textH + pad));
+    return {
+        x: x0,
+        y: y0,
+        w: Math.max(1, x1 - x0),
+        h: Math.max(1, y1 - y0)
+    };
+}
+
+function captureTextAreaSnapshot(ctx, bounds) {
+    try {
+        return ctx.getImageData(bounds.x, bounds.y, bounds.w, bounds.h);
+    } catch {
+        return null;
+    }
+}
+
+function findTextEntryAtPoint(x, y, layer, frame) {
+    for (let i = textEntries.length - 1; i >= 0; i--) {
+        const entry = textEntries[i];
+        if (entry.layer !== layer || entry.frame !== frame) continue;
+        const inX = x >= entry.bounds.x && x <= entry.bounds.x + entry.bounds.w;
+        const inY = y >= entry.bounds.y && y <= entry.bounds.y + entry.bounds.h;
+        if (inX && inY) return entry;
+    }
+    return null;
+}
+
+function ensureTextEntryOverlay() {
+    if (textEntryOverlay && textEntryInput) return;
+    textEntryOverlay = document.createElement("div");
+    textEntryOverlay.id = "canvasTextEntry";
+    textEntryOverlay.className = "canvasTextEntry";
+    textEntryOverlay.innerHTML = '<div class="canvasTextEntryCard"><label class="canvasTextEntryLabel" for="canvasTextEntryInput">Text</label><input id="canvasTextEntryInput" class="canvasTextEntryInput" type="text" maxlength="120" autocomplete="off" /><div class="canvasTextEntryOptions"><label class="canvasTextEntryOpt"><span>Font</span><select id="canvasTextEntryFamily" class="canvasTextEntrySelect"><option value="system-ui, sans-serif">System</option><option value="Arial, sans-serif">Arial</option><option value="Verdana, sans-serif">Verdana</option><option value="Georgia, serif">Georgia</option><option value="\"Trebuchet MS\", sans-serif">Trebuchet</option><option value="\"Courier New\", monospace">Courier</option></select></label><label class="canvasTextEntryOpt"><span>Size</span><input id="canvasTextEntrySize" class="canvasTextEntryNum" type="number" min="8" max="240" step="1" /></label><label class="canvasTextEntryOpt"><span>Weight</span><select id="canvasTextEntryWeight" class="canvasTextEntrySelect"><option value="300">Light</option><option value="400">Regular</option><option value="500">Medium</option><option value="700">Bold</option><option value="900">Black</option></select></label><label class="canvasTextEntryOpt"><span>Align</span><select id="canvasTextEntryAlign" class="canvasTextEntrySelect"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label><label class="canvasTextEntryOpt canvasTextEntryOptCheck"><input id="canvasTextEntryItalic" type="checkbox" /><span>Italic</span></label><label class="canvasTextEntryOpt canvasTextEntryOptCheck"><input id="canvasTextEntryStroke" type="checkbox" /><span>Stroke</span></label><label class="canvasTextEntryOpt"><span>Stroke Width</span><input id="canvasTextEntryStrokeWidth" class="canvasTextEntryNum" type="number" min="1" max="20" step="1" /></label></div><div class="canvasTextEntryActions"><button type="button" id="canvasTextEntryCancel" class="canvasTextEntryBtn">Cancel</button><button type="button" id="canvasTextEntryOk" class="canvasTextEntryBtn canvasTextEntryBtnPrimary">Place</button></div></div>';
+    document.body.appendChild(textEntryOverlay);
+    textEntryInput = textEntryOverlay.querySelector("#canvasTextEntryInput");
+    textEntryFamily = textEntryOverlay.querySelector("#canvasTextEntryFamily");
+    textEntrySize = textEntryOverlay.querySelector("#canvasTextEntrySize");
+    textEntryWeight = textEntryOverlay.querySelector("#canvasTextEntryWeight");
+    textEntryItalic = textEntryOverlay.querySelector("#canvasTextEntryItalic");
+    textEntryAlign = textEntryOverlay.querySelector("#canvasTextEntryAlign");
+    textEntryStroke = textEntryOverlay.querySelector("#canvasTextEntryStroke");
+    textEntryStrokeWidth = textEntryOverlay.querySelector("#canvasTextEntryStrokeWidth");
+    const cancelBtn = textEntryOverlay.querySelector("#canvasTextEntryCancel");
+    const okBtn = textEntryOverlay.querySelector("#canvasTextEntryOk");
+    cancelBtn?.addEventListener("click", () => closeTextEntryOverlay());
+    okBtn?.addEventListener("click", () => commitTextEntryOverlay());
+    textEntryInput?.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            commitTextEntryOverlay();
+        }
+        if (e.key === "Escape") {
+            e.preventDefault();
+            closeTextEntryOverlay();
+        }
+    });
+}
+
+function openTextEntryOverlay(target) {
+    ensureTextEntryOverlay();
+    textEntryTarget = target;
+    textEntryOverlay.classList.add("open");
+    document.body.classList.add("canvasTextEntryMode");
+    const opts = normalizeTextOptions(target?.initialOptions || textToolOptions);
+    textEntryInput.value = target?.initialText || "";
+    if (textEntryFamily) textEntryFamily.value = opts.family;
+    if (textEntrySize) textEntrySize.value = String(opts.size);
+    if (textEntryWeight) textEntryWeight.value = opts.weight;
+    if (textEntryItalic) textEntryItalic.checked = !!opts.italic;
+    if (textEntryAlign) textEntryAlign.value = opts.align;
+    if (textEntryStroke) textEntryStroke.checked = !!opts.stroke;
+    if (textEntryStrokeWidth) textEntryStrokeWidth.value = String(opts.strokeWidth);
+    queueMicrotask(() => textEntryInput?.focus());
+}
+
+function closeTextEntryOverlay() {
+    if (!textEntryOverlay) return;
+    textEntryOverlay.classList.remove("open");
+    document.body.classList.remove("canvasTextEntryMode");
+    textEntryTarget = null;
+}
+
+function commitTextEntryOverlay() {
+    const text = (textEntryInput?.value || "").trim();
+    if (!text || !textEntryTarget) {
+        closeTextEntryOverlay();
+        return;
+    }
+    const t = textEntryTarget;
+    const off = getFrameCanvas(t.layer, t.frame, t.hex);
+    const ctx = off?.getContext("2d");
+    if (!ctx) {
+        closeTextEntryOverlay();
+        return;
+    }
+    const opts = normalizeTextOptions({
+        family: textEntryFamily?.value || textToolOptions.family,
+        size: textEntrySize?.value,
+        weight: textEntryWeight?.value || textToolOptions.weight,
+        italic: !!textEntryItalic?.checked,
+        align: textEntryAlign?.value || textToolOptions.align,
+        stroke: !!textEntryStroke?.checked,
+        strokeWidth: textEntryStrokeWidth?.value
+    });
+
+    textToolOptions = { ...opts };
+
+    ctx.save();
+    applyTextStyle(ctx, opts, t.hex);
+    const bounds = measureTextBounds(ctx, t.x, t.y, text, opts);
+    ctx.restore();
+
+    beginGlobalHistoryStep(t.layer, t.frame, t.hex);
+    if (t.editEntry && t.editEntry.snapshot) {
+        try {
+            ctx.putImageData(t.editEntry.snapshot, t.editEntry.bounds.x, t.editEntry.bounds.y);
+        } catch {}
+    }
+
+    const snapshot = captureTextAreaSnapshot(ctx, bounds);
+
+    ctx.save();
+    applyTextStyle(ctx, opts, t.hex);
+    if (opts.stroke) {
+        ctx.lineWidth = opts.strokeWidth;
+        ctx.strokeStyle = "rgba(0,0,0,0.78)";
+        ctx.strokeText(text, t.x, t.y);
+    }
+    ctx.fillText(text, t.x, t.y);
+    ctx.restore();
+
+    if (t.editEntry) {
+        t.editEntry.text = text;
+        t.editEntry.hex = t.hex;
+        t.editEntry.options = { ...opts };
+        t.editEntry.bounds = bounds;
+        t.editEntry.snapshot = snapshot;
+    } else {
+        textEntries.push({
+            layer: t.layer,
+            frame: t.frame,
+            text,
+            x: t.x,
+            y: t.y,
+            hex: t.hex,
+            options: { ...opts },
+            bounds,
+            snapshot
+        });
+    }
+    markGlobalHistoryDirty();
+    commitGlobalHistoryStep();
+    markFrameHasContent(t.layer, t.frame, t.hex);
+    queueRenderAll();
+    updateTimelineHasContent(t.frame);
+    closeTextEntryOverlay();
+}
 
 function pressure(e) {
     const pid = Number.isFinite(e?.pointerId) ? e.pointerId : -1;
@@ -47,6 +273,27 @@ function handlePointerDown(e) {
           return;
       }
   }
+  
+  // Handle guide placement mode
+  const guideMode = document.body.classList.contains("guide-place-mode");
+  if (guideMode && e.button === 0) {
+      const pos = getCanvasPointer(e);
+      const pt = screenToContent(pos.x, pos.y);
+      if (pt.x >= 0 && pt.x <= contentW && pt.y >= 0 && pt.y <= contentH) {
+          if (document.body.classList.contains("guide-place-h")) {
+              guides.push({ horizontal: true, pos: pt.y });
+          } else if (document.body.classList.contains("guide-place-v")) {
+              guides.push({ horizontal: false, pos: pt.x });
+          }
+          queueRenderAll();
+          if (window.__celstompSetGuidePlacementMode) {
+              window.__celstompSetGuidePlacementMode(null);
+          }
+          e.preventDefault();
+          return;
+      }
+  }
+  
   try {
       drawCanvas.setPointerCapture(e.pointerId);
   } catch {}
@@ -257,6 +504,16 @@ function startStroke(e) {
   const startPt = stabilizePoint(e, x, y);
   x = startPt.x;
   y = startPt.y;
+  if (gridSnap && gridEnabled) {
+      const snapped = snapToGrid(x, y);
+      x = snapped.x;
+      y = snapped.y;
+  }
+  if (guideSnap) {
+      const snapped = snapToGuides(x, y);
+      x = snapped.x;
+      y = snapped.y;
+  }
   if (x < 0 || y < 0 || x > contentW || y > contentH) return;
   if (e.button === 2) {
       startPan(e);
@@ -338,6 +595,57 @@ function startStroke(e) {
       startPan(e);
       return;
   }
+  if (tool === "line") {
+      isDrawing = true;
+      const hex = colorToHex(currentColor);
+      strokeHex = activeLayer === LAYER.FILL ? fillWhite : hex;
+      activeSubColor[activeLayer] = strokeHex;
+      ensureSublayer(activeLayer, strokeHex);
+      renderLayerSwatches(activeLayer);
+      lineToolStart = { x, y };
+      lineToolPreview = { x, y };
+      return;
+  }
+  if (tool === "text") {
+      const found = findTextEntryAtPoint(x, y, activeLayer, currentFrame);
+      if (found) {
+          openTextEntryOverlay({
+              x: found.x,
+              y: found.y,
+              layer: found.layer,
+              frame: found.frame,
+              hex: found.hex,
+              initialText: found.text,
+              initialOptions: found.options,
+              editEntry: found
+          });
+      } else {
+          const hex = colorToHex(currentColor);
+          openTextEntryOverlay({
+              x,
+              y,
+              layer: activeLayer,
+              frame: currentFrame,
+              hex,
+              initialOptions: {
+                  ...textToolOptions,
+                  size: Math.max(10, Math.round(brushSize * 4))
+              }
+          });
+      }
+      return;
+  }
+  if (tool === "rect") {
+      isDrawing = true;
+      const hex = colorToHex(currentColor);
+      strokeHex = activeLayer === LAYER.FILL ? fillWhite : hex;
+      activeSubColor[activeLayer] = strokeHex;
+      ensureSublayer(activeLayer, strokeHex);
+      renderLayerSwatches(activeLayer);
+      rectToolStart = { x, y };
+      rectToolPreview = { x, y };
+      return;
+  }
   if (activeLayer === PAPER_LAYER) {
       return;
   }
@@ -392,6 +700,11 @@ function continueStroke(e) {
   const movePt = stabilizePoint(e, x, y);
   x = movePt.x;
   y = movePt.y;
+  if (gridSnap && gridEnabled && tool !== "line") {
+      const snapped = snapToGrid(x, y);
+      x = snapped.x;
+      y = snapped.y;
+  }
   if (!lastPt) lastPt = {
       x: x,
       y: y
@@ -402,6 +715,16 @@ function continueStroke(e) {
           x: x,
           y: y
       };
+      return;
+  }
+  if (tool === "line") {
+      lineToolPreview = { x, y };
+      queueRenderAll();
+      return;
+  }
+  if (tool === "rect") {
+      rectToolPreview = { x, y };
+      queueRenderAll();
       return;
   }
   if (tool === "fill-eraser" || tool === "fill-brush") {
@@ -472,6 +795,43 @@ function endStroke() {
       endRectSelect();
       lastPt = null;
       stabilizedPt = null;
+      return;
+  }
+  if (tool === "line" && lineToolStart && lineToolPreview) {
+      const hex = strokeHex || activeSubColor?.[activeLayer] || colorToHex(currentColor);
+      const off = getFrameCanvas(activeLayer, currentFrame, hex);
+      const ctx = off.getContext("2d");
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = brushSize;
+      ctx.strokeStyle = hex;
+      ctx.beginPath();
+      ctx.moveTo(lineToolStart.x, lineToolStart.y);
+      ctx.lineTo(lineToolPreview.x, lineToolPreview.y);
+      ctx.stroke();
+      markFrameHasContent(activeLayer, currentFrame, hex);
+      lineToolStart = null;
+      lineToolPreview = null;
+      queueRenderAll();
+      updateTimelineHasContent(currentFrame);
+      return;
+  }
+  if (tool === "rect" && rectToolStart && rectToolPreview) {
+      const hex = strokeHex || activeSubColor?.[activeLayer] || colorToHex(currentColor);
+      const off = getFrameCanvas(activeLayer, currentFrame, hex);
+      const ctx = off.getContext("2d");
+      ctx.lineWidth = brushSize;
+      ctx.strokeStyle = hex;
+      const rx = Math.min(rectToolStart.x, rectToolPreview.x);
+      const ry = Math.min(rectToolStart.y, rectToolPreview.y);
+      const rw = Math.abs(rectToolPreview.x - rectToolStart.x);
+      const rh = Math.abs(rectToolPreview.y - rectToolStart.y);
+      ctx.strokeRect(rx, ry, rw, rh);
+      markFrameHasContent(activeLayer, currentFrame, hex);
+      rectToolStart = null;
+      rectToolPreview = null;
+      queueRenderAll();
+      updateTimelineHasContent(currentFrame);
       return;
   }
   if (tool === "lasso-erase" && lassoActive) {
@@ -842,6 +1202,94 @@ function drawRectSelectionOverlay(ctx) {
     ctx.fillRect(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
     ctx.strokeRect(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
     ctx.restore();
+}
+function drawLineToolPreview(ctx) {
+    if (!lineToolStart || !lineToolPreview) return;
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = brushSize;
+    ctx.strokeStyle = currentColor;
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(lineToolStart.x, lineToolStart.y);
+    ctx.lineTo(lineToolPreview.x, lineToolPreview.y);
+    ctx.stroke();
+    ctx.restore();
+}
+function drawRectToolPreview(ctx) {
+    if (!rectToolStart || !rectToolPreview) return;
+    ctx.save();
+    ctx.lineWidth = brushSize;
+    ctx.strokeStyle = currentColor;
+    ctx.globalAlpha = 0.5;
+    const rx = Math.min(rectToolStart.x, rectToolPreview.x);
+    const ry = Math.min(rectToolStart.y, rectToolPreview.y);
+    const rw = Math.abs(rectToolPreview.x - rectToolStart.x);
+    const rh = Math.abs(rectToolPreview.y - rectToolStart.y);
+    ctx.strokeRect(rx, ry, rw, rh);
+    ctx.restore();
+}
+function drawGrid(ctx) {
+    if (!gridEnabled) return;
+    ctx.save();
+    ctx.strokeStyle = "rgba(128, 128, 128, 0.5)";
+    const z = getZoom();
+    ctx.lineWidth = 1 / z; // Scale line width with zoom to remain visible
+    for (let x = 0; x <= contentW; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, contentH);
+        ctx.stroke();
+    }
+    for (let y = 0; y <= contentH; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(contentW, y);
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+function drawGuides(ctx) {
+    if (!guides.length) return;
+    ctx.save();
+    ctx.strokeStyle = "#ff6b6b";
+    const z = getZoom();
+    ctx.lineWidth = 1 / z; // Scale with zoom
+    ctx.setLineDash([4 / z, 4 / z]);
+    for (const guide of guides) {
+        if (guide.horizontal) {
+            ctx.beginPath();
+            ctx.moveTo(0, guide.pos);
+            ctx.lineTo(contentW, guide.pos);
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.moveTo(guide.pos, 0);
+            ctx.lineTo(guide.pos, contentH);
+            ctx.stroke();
+        }
+    }
+    ctx.restore();
+}
+function snapToGuides(x, y) {
+    if (!guideSnap || !guides.length) return { x, y };
+    const threshold = 8;
+    for (const guide of guides) {
+        if (guide.horizontal && Math.abs(y - guide.pos) < threshold) {
+            y = guide.pos;
+        } else if (!guide.horizontal && Math.abs(x - guide.pos) < threshold) {
+            x = guide.pos;
+        }
+    }
+    return { x, y };
+}
+function snapToGrid(x, y) {
+    if (!gridSnap || !gridEnabled) return { x, y };
+    return {
+        x: Math.round(x / gridSize) * gridSize,
+        y: Math.round(y / gridSize) * gridSize
+    };
 }
 function beginRectSelect(e) {
     if (activeLayer === PAPER_LAYER) return;

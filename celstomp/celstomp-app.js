@@ -350,6 +350,8 @@
         
         
         function renderBounds() {
+            fxctx.setTransform(1, 0, 0, 1, 0, 0);
+            fxctx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
             setTransform(bctx);
             setTransform(fxctx);
             bctx.fillStyle = "#2a2f38";
@@ -358,6 +360,10 @@
             bctx.fillRect(0, 0, contentW, contentH);
             bctx.strokeRect(0, 0, contentW, contentH);
             drawRectSelectionOverlay(fxctx);
+            drawLineToolPreview(fxctx);
+            drawRectToolPreview(fxctx);
+            drawGrid(fxctx);
+            drawGuides(fxctx);
         }
 
         function onionCompositeOperation() {
@@ -404,6 +410,12 @@
         function clearFx() {
             fxctx.setTransform(1, 0, 0, 1, 0, 0);
             fxctx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            setTransform(fxctx);
+            drawRectSelectionOverlay(fxctx);
+            drawLineToolPreview(fxctx);
+            drawRectToolPreview(fxctx);
+            drawGrid(fxctx);
+            drawGuides(fxctx);
         }
 
         function wireBrushButtonRightClick() {
@@ -901,6 +913,95 @@
                 safeSetValue(snapValue, v);
                 updateHUD();
             });
+            const gridToggle = $("tlGridBtn");
+            const gridSnapToggle = $("tlGridSnapBtn");
+            const rulersToggle = $("tlRulersBtn");
+            const guideSnapToggle = $("tlGuideSnapBtn");
+            const addHGuideBtn = $("addHGuideBtn");
+            const addVGuideBtn = $("addVGuideBtn");
+            const clearGuidesBtn = $("clearGuidesBtn");
+            const guideModeHint = $("guideModeHint");
+            const gridSizeInput = $("tlGridSize");
+            
+            let guidePlacementMode = null;
+            
+            if (gridToggle) {
+                gridToggle.addEventListener("click", e => {
+                    gridEnabled = !gridEnabled;
+                    gridToggle.classList.toggle("active", gridEnabled);
+                    queueRenderAll();
+                });
+            }
+            if (gridSizeInput) {
+                gridSizeInput.addEventListener("change", e => {
+                    const v = Math.max(8, Math.min(128, parseInt(e.target.value) || 32));
+                    gridSize = v;
+                    e.target.value = v;
+                    queueRenderAll();
+                });
+            }
+            if (gridSnapToggle) {
+                gridSnapToggle.addEventListener("click", e => {
+                    gridSnap = !gridSnap;
+                    gridSnapToggle.classList.toggle("active", gridSnap);
+                });
+            }
+            if (rulersToggle) {
+                rulersToggle.addEventListener("click", e => {
+                    rulersEnabled = !rulersEnabled;
+                    rulersToggle.classList.toggle("active", rulersEnabled);
+                    queueRenderAll();
+                });
+            }
+            if (guideSnapToggle) {
+                guideSnapToggle.addEventListener("click", e => {
+                    guideSnap = !guideSnap;
+                    guideSnapToggle.classList.toggle("active", guideSnap);
+                });
+            }
+            function setGuidePlacementMode(mode) {
+                guidePlacementMode = mode;
+                if (addHGuideBtn) addHGuideBtn.classList.toggle("active", mode === "horizontal");
+                if (addVGuideBtn) addVGuideBtn.classList.toggle("active", mode === "vertical");
+                if (guideModeHint) {
+                    guideModeHint.hidden = !mode;
+                    guideModeHint.textContent = mode === "horizontal" ? "Click Canvas To Place H Guide" : mode === "vertical" ? "Click Canvas To Place V Guide" : "";
+                }
+                if (!mode) {
+                    document.body.classList.remove("guide-place-mode");
+                    document.body.classList.remove("guide-place-h");
+                    document.body.classList.remove("guide-place-v");
+                } else {
+                    document.body.classList.add("guide-place-mode");
+                    document.body.classList.toggle("guide-place-h", mode === "horizontal");
+                    document.body.classList.toggle("guide-place-v", mode === "vertical");
+                }
+            }
+            if (addHGuideBtn) {
+                addHGuideBtn.addEventListener("click", e => {
+                    if (guidePlacementMode === "horizontal") {
+                        setGuidePlacementMode(null);
+                    } else {
+                        setGuidePlacementMode("horizontal");
+                    }
+                });
+            }
+            if (addVGuideBtn) {
+                addVGuideBtn.addEventListener("click", e => {
+                    if (guidePlacementMode === "vertical") {
+                        setGuidePlacementMode(null);
+                    } else {
+                        setGuidePlacementMode("vertical");
+                    }
+                });
+            }
+            if (clearGuidesBtn) {
+                clearGuidesBtn.addEventListener("click", () => {
+                    guides = [];
+                    queueRenderAll();
+                });
+            }
+            window.__celstompSetGuidePlacementMode = setGuidePlacementMode;
             function rebuildTimelineKeepFrame() {
                 const cur = currentFrame;
                 buildTimeline();

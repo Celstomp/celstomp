@@ -8,7 +8,7 @@ const autosaveController = window.CelstompAutosave?.createController?.({
   badgeEl: saveStateBadgeEl,
   buildSnapshot: async () => await buildProjectSnapshot(),
   pointerSelectors: [ "#drawCanvas", "#fillCurrent", "#fillAll", "#tlDupCel", "#toolSeg label", "#layerSeg .layerRow", "#timelineTable td" ],
-  valueSelectors: [ "#autofillToggle", "#brushSize", "#brushSizeRange", "#brushSizeNum", "#eraserSize", "#pressureSize", "#pressureOpacity", "#pressureTilt", "#tlSnap", "#tlSeconds", "#tlFps", "#tlOnion", "#tlTransparency", "#loopToggle", "#onionPrevColor", "#onionNextColor", "#onionAlpha", "#onionBlendMode" ],
+  valueSelectors: [ "#autofillToggle", "#brushSize", "#brushSizeRange", "#brushSizeNum", "#eraserSize", "#pressureSize", "#pressureOpacity", "#pressureTilt", "#tlSnap", "#tlSeconds", "#tlFps", "#tlOnion", "#tlTransparency", "#loopToggle", "#onionPrevColor", "#onionNextColor", "#onionAlpha", "#onionBlendMode", "#tlGridToggle", "#tlGridSnap", "#tlGridSize" ],
   onRestorePayload: (payload, source) => {
       const blob = new Blob([ JSON.stringify(payload.data) ], {
           type: "application/json"

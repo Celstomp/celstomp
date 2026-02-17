@@ -54,6 +54,50 @@
   cursor: grabbing;
 }
 
+.islandDock.drag-lock-candidate {
+  outline: 2px solid rgba(92, 179, 255, 0.6);
+  outline-offset: -2px;
+}
+
+.islandDock.right-locked {
+  left: auto !important;
+  right: var(--dock-gap);
+  top: calc(var(--header-h) + var(--dock-gap));
+  bottom: calc(var(--timeline-h) + var(--dock-gap-bottom));
+  height: auto !important;
+  width: min(320px, 36vw);
+}
+
+.islandDock.right-locked .islandHeader {
+  background: rgba(92, 179, 255, 0.12);
+  border-bottom-color: rgba(92, 179, 255, 0.35);
+}
+
+.islandLockHint {
+  position: fixed;
+  top: calc(var(--header-h) + 14px);
+  right: 10px;
+  width: 180px;
+  height: calc(100vh - var(--header-h) - var(--timeline-h) - 24px);
+  border: 2px dashed rgba(92, 179, 255, 0.32);
+  border-radius: 10px;
+  background: rgba(92, 179, 255, 0.08);
+  color: rgba(180, 225, 255, 0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: 39;
+  pointer-events: none;
+}
+
+.islandLockHint.active {
+  display: flex;
+}
+
 .islandTitle{
   font-size: 12px;
   letter-spacing: 0.08em;
@@ -220,6 +264,30 @@
   gap: 10px;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.islandSideBody {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.24) rgba(0,0,0,0.22);
+}
+
+.islandSideBody::-webkit-scrollbar {
+  width: 10px;
+}
+
+.islandSideBody::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.24);
+  border-radius: 999px;
+}
+
+.islandSideBody::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.24);
+  border-radius: 999px;
+  border: 2px solid rgba(0,0,0,0.22);
+}
+
+.islandSideBody::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.34);
 }
 
 .islandSideGrid{

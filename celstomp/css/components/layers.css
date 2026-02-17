@@ -136,6 +136,30 @@ body.swatch-reordering{
   border-radius: 0px;
 }
 
+#islandLayersSlot {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.24) rgba(0,0,0,0.22);
+}
+
+#islandLayersSlot::-webkit-scrollbar {
+  width: 10px;
+}
+
+#islandLayersSlot::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.24);
+  border-radius: 999px;
+}
+
+#islandLayersSlot::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.24);
+  border-radius: 999px;
+  border: 2px solid rgba(0,0,0,0.22);
+}
+
+#islandLayersSlot::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.34);
+}
+
 #islandLayersSlot #layerSeg{
   display: flex !important;
   flex-direction: column !important;

@@ -580,6 +580,46 @@ function _wireExtraKeyboardShortcuts() {
       }, true);
   }
 }
+function flipSelection(horizontal) {
+    if (!rectSelection.active) return;
+    const c = getFrameCanvas(rectSelection.L, rectSelection.F, rectSelection.key);
+    if (!c) return;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+
+    const selSnap = ctx.getImageData(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
+    const fullSnap = ctx.getImageData(0, 0, contentW, contentH);
+
+    beginGlobalHistoryStep(rectSelection.L, rectSelection.F, rectSelection.key);
+
+    ctx.clearRect(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
+
+    const flipped = ctx.createImageData(rectSelection.w, rectSelection.h);
+    const src = selSnap.data;
+    const dst = flipped.data;
+
+    for (let y = 0; y < rectSelection.h; y++) {
+        for (let x = 0; x < rectSelection.w; x++) {
+            const srcIdx = (y * rectSelection.w + x) * 4;
+            const dstY = horizontal ? y : (rectSelection.h - 1 - y);
+            const dstX = horizontal ? (rectSelection.w - 1 - x) : x;
+            const dstIdx = (dstY * rectSelection.w + dstX) * 4;
+            dst[dstIdx] = src[srcIdx];
+            dst[dstIdx + 1] = src[srcIdx + 1];
+            dst[dstIdx + 2] = src[srcIdx + 2];
+            dst[dstIdx + 3] = src[srcIdx + 3];
+        }
+    }
+
+    ctx.putImageData(flipped, rectSelection.x, rectSelection.y);
+
+    markGlobalHistoryDirty();
+    commitGlobalHistoryStep();
+    recomputeHasContent(rectSelection.L, rectSelection.F, rectSelection.key);
+    queueRenderAll();
+    updateTimelineHasContent(rectSelection.F);
+}
+
 function wireKeyboardShortcuts() {
   if (document._celstompKeysWired) return;
   document._celstompKeysWired = true;
@@ -600,12 +640,15 @@ function wireKeyboardShortcuts() {
   const toolByKey = {
       1: "brush",
       2: "eraser",
-      3: "fill-brush",
-      4: "fill-eraser",
-      5: "lasso-fill",
-      6: "lasso-erase",
-      7: "rect-select",
-      8: "eyedropper"
+      3: "line",
+      4: "rect",
+      5: "text",
+      6: "fill-brush",
+      7: "fill-eraser",
+      8: "lasso-fill",
+      9: "lasso-erase",
+      0: "rect-select",
+      "-": "eyedropper"
   };
   document.addEventListener("keydown", e => {
       if (e.defaultPrevented) return;
@@ -692,25 +735,46 @@ function onWindowKeyDown(e) {
                 if (isDigit(3)) {
                     e.preventDefault();
                     pickTool({
+                        id: "tool-line",
+                        value: "line"
+                    });
+                }
+                if (isDigit(4)) {
+                    e.preventDefault();
+                    pickTool({
+                        id: "tool-rect",
+                        value: "rect"
+                    });
+                }
+                if (isDigit(5)) {
+                    e.preventDefault();
+                    pickTool({
+                        id: "tool-text",
+                        value: "text"
+                    });
+                }
+                if (isDigit(6)) {
+                    e.preventDefault();
+                    pickTool({
                         id: "tool-fillbrush",
                         value: "fill-brush"
                     });
                 }
-                if (isDigit(4)) {
+                if (isDigit(7)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-filleraser",
                         value: "fill-eraser"
                     });
                 }
-                if (isDigit(5)) {
+                if (isDigit(8)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-lassoFill",
                         value: "lasso-fill"
                     });
                 }
-                if (isDigit(6)) {
+                if (isDigit(9)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-lassoErase",
@@ -718,24 +782,22 @@ function onWindowKeyDown(e) {
                         value: "lasso-erase"
                     });
                 }
-                if (isDigit(7)) {
+                if (isDigit(0)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-rectSelect",
                         value: "rect-select"
                     });
                 }
-                if (isDigit(8)) {
-                    e.preventDefault();
-                    pickTool({
-                        id: "tool-eyedropper",
-                        value: "eyedropper"
-                    });
-                }
             }
         }
     }
     if (e.key === "Escape") {
+        if (document.body.classList.contains("guide-place-mode") && window.__celstompSetGuidePlacementMode) {
+            e.preventDefault();
+            window.__celstompSetGuidePlacementMode(null);
+            return;
+        }
         if (tool === "lasso-fill" && lassoActive) {
             e.preventDefault();
             cancelLasso();
@@ -746,6 +808,25 @@ function onWindowKeyDown(e) {
         if (rectSelection.active) {
             e.preventDefault();
             clearRectSelection();
+            return;
+        }
+    }
+    if (rectSelection.active && (e.key.toLowerCase() === "h" || e.key.toLowerCase() === "v")) {
+        const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : "";
+        if (tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
+            e.preventDefault();
+            flipSelection(e.key.toLowerCase() === "h");
+            return;
+        }
+    }
+    if (e.key.toLowerCase() === "g") {
+        const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : "";
+        if (tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
+            e.preventDefault();
+            gridEnabled = !gridEnabled;
+            const gridBtn = $("tlGridBtn");
+            if (gridBtn) gridBtn.classList.toggle("active", gridEnabled);
+            queueRenderAll();
             return;
         }
     }
@@ -788,6 +869,14 @@ function onWindowKeyDown(e) {
             }
         }
     }
+    const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : "";
+    const typingNow = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target && e.target.isContentEditable;
+    const textEditorOpen = document.body.classList.contains("canvasTextEntryMode");
+
+    if ((typingNow || textEditorOpen) && e.key === " ") {
+        return;
+    }
+
     if (ctrl && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();

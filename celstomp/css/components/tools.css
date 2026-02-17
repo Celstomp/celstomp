@@ -48,6 +48,35 @@
   z-index: 8;
 }
 
+#tools,
+#toolsRight {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.22) rgba(0,0,0,0.2);
+}
+
+#tools::-webkit-scrollbar,
+#toolsRight::-webkit-scrollbar {
+  width: 10px;
+}
+
+#tools::-webkit-scrollbar-track,
+#toolsRight::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.22);
+  border-radius: 999px;
+}
+
+#tools::-webkit-scrollbar-thumb,
+#toolsRight::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.22);
+  border-radius: 999px;
+  border: 2px solid rgba(0,0,0,0.2);
+}
+
+#tools::-webkit-scrollbar-thumb:hover,
+#toolsRight::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.3);
+}
+
 /* Collapsed states */
 .app.tl-collapsed #tools,
 .app.tl-collapsed #toolsRight{
@@ -124,6 +153,37 @@
   font-size: 0;
   line-height: 0;
   cursor: pointer;
+}
+
+#islandToolsSlot #toolSeg > label svg {
+  width: 20px;
+  height: 20px;
+  color: rgba(255,255,255,0.85);
+  position: relative;
+  z-index: 1;
+}
+
+#islandToolsSlot #toolSeg > label:has(svg) {
+  background-image: none;
+}
+
+#islandToolsSlot #toolSeg > label:has(svg)::before {
+  display: none;
+}
+
+body.guide-place-mode #stage,
+body.guide-place-mode #drawCanvas {
+  cursor: crosshair !important;
+}
+
+body.guide-place-h #stage,
+body.guide-place-h #drawCanvas {
+  cursor: ns-resize !important;
+}
+
+body.guide-place-v #stage,
+body.guide-place-v #drawCanvas {
+  cursor: ew-resize !important;
 }
 
 #islandToolsSlot #toolSeg > label::before{

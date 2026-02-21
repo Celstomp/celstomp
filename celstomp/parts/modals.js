@@ -58,6 +58,8 @@ document.getElementById('part-modals').innerHTML = `
         <div class="shortcutRow"><kbd>6</kbd><span>Lasso Erase</span></div>
         <div class="shortcutRow"><kbd>7</kbd><span>Rect Select</span></div>
         <div class="shortcutRow"><kbd>8</kbd><span>Eyedropper</span></div>
+        <div class="shortcutRow"><kbd>9</kbd><span>Text</span></div>
+        <div class="shortcutRow"><kbd>T</kbd><span>Text</span></div>
       </div>
       <div class="shortcutSection">
         <h4>Navigation</h4>
@@ -223,6 +225,41 @@ document.getElementById('part-modals').innerHTML = `
     <div class="modalActions">
       <button id="autosaveIntervalCancelBtn" type="button">Cancel</button>
       <button id="autosaveIntervalConfirmBtn" type="button">Apply</button>
+    </div>
+  </div>
+
+  <div id="canvasTextEntry" class="canvasTextEntry" role="dialog" aria-modal="true" aria-labelledby="canvasTextEntryLabel" hidden>
+    <div class="canvasTextEntryCard">
+      <div id="canvasTextEntryLabel" class="canvasTextEntryLabel">Add Text</div>
+      <textarea id="canvasTextEntryInput" class="canvasTextEntryInput" rows="3" placeholder="Enter text..."></textarea>
+      <div class="canvasTextEntryOptions">
+        <div class="canvasTextEntryOpt">
+          <span>Font Size</span>
+          <input id="canvasTextEntrySize" class="canvasTextEntryNum" type="number" min="8" max="200" value="32" />
+        </div>
+        <div class="canvasTextEntryOpt">
+          <span>Font</span>
+          <select id="canvasTextEntryFont" class="canvasTextEntrySelect">
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Verdana">Verdana</option>
+          </select>
+        </div>
+        <label class="canvasTextEntryOpt canvasTextEntryOptCheck">
+          <input id="canvasTextEntryBold" type="checkbox" />
+          <span>Bold</span>
+        </label>
+        <label class="canvasTextEntryOpt canvasTextEntryOptCheck">
+          <input id="canvasTextEntryItalic" type="checkbox" />
+          <span>Italic</span>
+        </label>
+      </div>
+      <div class="canvasTextEntryActions">
+        <button id="canvasTextEntryCancel" class="canvasTextEntryBtn" type="button">Cancel</button>
+        <button id="canvasTextEntryApply" class="canvasTextEntryBtn canvasTextEntryBtnPrimary" type="button">Add Text</button>
+      </div>
     </div>
   </div>
 `;

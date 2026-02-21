@@ -491,6 +491,14 @@ function _wireExtraKeyboardShortcuts() {
           return;
       }
 
+      if (k === "g") {
+          e.preventDefault();
+          toggleGrid();
+          const gridBtn = document.getElementById("toggleGridBtn");
+          if (gridBtn) gridBtn.classList.toggle("active", gridEnabled);
+          return;
+      }
+
       if (k === "[") {
           e.preventDefault();
           brushSize = Math.max(1, brushSize - 5);

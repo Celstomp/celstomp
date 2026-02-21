@@ -401,3 +401,29 @@ body.dragging-cel{ cursor: grabbing; user-select:none; }
     padding: 6px 8px;
   }
 }
+
+.gridGuideCtrls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gridGuideCtrls button.active {
+  background: rgba(0, 229, 255, 0.25);
+  border-color: rgba(0, 229, 255, 0.6);
+}
+
+.guideModeHint {
+  position: fixed;
+  bottom: calc(var(--timeline-h) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 229, 255, 0.18);
+  border: 1px solid rgba(0, 229, 255, 0.5);
+  color: #9fd5ff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  z-index: 100;
+  pointer-events: none;
+}

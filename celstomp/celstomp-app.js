@@ -404,6 +404,9 @@
         function clearFx() {
             fxctx.setTransform(1, 0, 0, 1, 0, 0);
             fxctx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            setTransform(fxctx);
+            drawGrid(fxctx);
+            drawGuides(fxctx);
         }
 
         function wireBrushButtonRightClick() {
@@ -924,6 +927,48 @@
                 playSnapped = !!e.target.checked;
                 safeSetChecked(playSnappedChk, playSnapped);
             });
+
+            const gridBtn = $("toggleGridBtn");
+            const gridSizeInp = $("gridSizeInput");
+            const gridSnapBtn = $("toggleGridSnapBtn");
+            const guidesBtn = $("toggleGuidesBtn");
+            const guideSnapBtn = $("toggleGuideSnapBtn");
+            const addGuideHBtn = $("addGuideHBtn");
+            const addGuideVBtn = $("addGuideVBtn");
+            const clearGuidesBtn = $("clearGuidesBtn");
+            guideModeHint = $("guideModeHint");
+
+            gridBtn?.addEventListener("click", () => {
+                toggleGrid();
+                gridBtn.classList.toggle("active", gridEnabled);
+            });
+            gridSizeInp?.addEventListener("input", e => {
+                gridSize = Math.max(8, Math.min(128, parseInt(e.target.value, 10) || 32));
+                queueRenderAll();
+            });
+            gridSnapBtn?.addEventListener("click", () => {
+                toggleGridSnap();
+                gridSnapBtn.classList.toggle("active", gridSnap);
+            });
+            guidesBtn?.addEventListener("click", () => {
+                toggleGuides();
+                guidesBtn.classList.toggle("active", guidesEnabled);
+            });
+            guideSnapBtn?.addEventListener("click", () => {
+                toggleGuideSnap();
+                guideSnapBtn.classList.toggle("active", guideSnap);
+            });
+            addGuideHBtn?.addEventListener("click", () => {
+                setGuideMode(guideMode === 'h' ? null : 'h');
+                addGuideHBtn.classList.toggle("active", guideMode === 'h');
+                addGuideVBtn?.classList.remove("active");
+            });
+            addGuideVBtn?.addEventListener("click", () => {
+                setGuideMode(guideMode === 'v' ? null : 'v');
+                addGuideVBtn.classList.toggle("active", guideMode === 'v');
+                addGuideHBtn?.classList.remove("active");
+            });
+            clearGuidesBtn?.addEventListener("click", clearGuides);
         }
 
         function wirePanelToggles() {

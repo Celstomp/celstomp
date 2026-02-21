@@ -11,6 +11,16 @@ let usePressureTilt = false;
 let brushSize = 3;
 let autofill = false;
 
+let gridEnabled = false;
+let gridSize = 32;
+let gridSnap = false;
+let guidesEnabled = false;
+let guideSnap = false;
+let guideHLines = [];
+let guideVLines = [];
+let guideMode = null;
+let guideModeHint = null;
+
 let trailPoints = [];
 
 function pressure(e) {
@@ -43,6 +53,14 @@ function handlePointerDown(e) {
   if (e.pointerType === "touch" && window.__celstompPinching) return;
   if ((e.ctrlKey || e.metaKey) && e.pointerType !== "touch") {
       if (beginCtrlMove(e)) {
+          e.preventDefault();
+          return;
+      }
+  }
+  if (guideMode && e.button === 0) {
+      const pos = getCanvasPointer(e);
+      const pt = screenToContent(pos.x, pos.y);
+      if (handleGuideClick(pt.x, pt.y)) {
           e.preventDefault();
           return;
       }
@@ -1485,5 +1503,106 @@ function fillFromLineart(F) {
     fillCanvas._hasContent = true;
     queueRenderAll();
     updateTimelineHasContent(F);
+    return true;
+}
+
+function drawGrid(ctx) {
+    if (!gridEnabled) return;
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 1 / Math.max(getZoom(), 1);
+    ctx.beginPath();
+    for (let x = 0; x <= contentW; x += gridSize) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, contentH);
+    }
+    for (let y = 0; y <= contentH; y += gridSize) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(contentW, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawGuides(ctx) {
+    if (!guidesEnabled) return;
+    ctx.save();
+    ctx.strokeStyle = "rgba(0,229,255,0.6)";
+    ctx.lineWidth = 1 / Math.max(getZoom(), 1);
+    ctx.setLineDash([4 / Math.max(getZoom(), 1), 2 / Math.max(getZoom(), 1)]);
+    ctx.beginPath();
+    for (const y of guideHLines) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(contentW, y);
+    }
+    for (const x of guideVLines) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, contentH);
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
+function snapToGrid(x, y) {
+    if (!gridEnabled || !gridSnap) return { x, y };
+    return {
+        x: Math.round(x / gridSize) * gridSize,
+        y: Math.round(y / gridSize) * gridSize
+    };
+}
+
+function snapToGuides(x, y) {
+    if (!guidesEnabled || !guideSnap) return { x, y };
+    const threshold = 8;
+    let sx = x, sy = y;
+    for (const gy of guideHLines) {
+        if (Math.abs(y - gy) < threshold) sy = gy;
+    }
+    for (const gx of guideVLines) {
+        if (Math.abs(x - gx) < threshold) sx = gx;
+    }
+    return { x: sx, y: sy };
+}
+
+function toggleGrid() {
+    gridEnabled = !gridEnabled;
+    queueRenderAll();
+}
+
+function toggleGridSnap() {
+    gridSnap = !gridSnap;
+}
+
+function toggleGuides() {
+    guidesEnabled = !guidesEnabled;
+    queueRenderAll();
+}
+
+function toggleGuideSnap() {
+    guideSnap = !guideSnap;
+}
+
+function clearGuides() {
+    guideHLines = [];
+    guideVLines = [];
+    queueRenderAll();
+}
+
+function setGuideMode(mode) {
+    guideMode = mode;
+    if (guideModeHint) {
+        guideModeHint.textContent = mode ? `Click to place ${mode === 'h' ? 'horizontal' : 'vertical'} guide` : '';
+        guideModeHint.hidden = !mode;
+    }
+}
+
+function handleGuideClick(x, y) {
+    if (!guideMode) return false;
+    if (guideMode === 'h') {
+        guideHLines.push(Math.round(y));
+    } else if (guideMode === 'v') {
+        guideVLines.push(Math.round(x));
+    }
+    queueRenderAll();
     return true;
 }

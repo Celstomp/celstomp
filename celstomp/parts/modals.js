@@ -52,13 +52,14 @@ document.getElementById('part-modals').innerHTML = `
         <h4>Tools</h4>
         <div class="shortcutRow"><kbd>1</kbd><span>Brush</span></div>
         <div class="shortcutRow"><kbd>2</kbd><span>Eraser</span></div>
-        <div class="shortcutRow"><kbd>3</kbd><span>Fill Brush</span></div>
+        <div class="shortcutRow"><kbd>3</kbd><span>Line</span></div>
         <div class="shortcutRow"><kbd>4</kbd><span>Rect</span></div>
-        <div class="shortcutRow"><kbd>5</kbd><span>Fill Eraser</span></div>
-        <div class="shortcutRow"><kbd>6</kbd><span>Lasso Fill</span></div>
-        <div class="shortcutRow"><kbd>7</kbd><span>Lasso Erase</span></div>
-        <div class="shortcutRow"><kbd>8</kbd><span>Rect Select</span></div>
-        <div class="shortcutRow"><kbd>9</kbd><span>Eyedropper</span></div>
+        <div class="shortcutRow"><kbd>5</kbd><span>Fill Brush</span></div>
+        <div class="shortcutRow"><kbd>6</kbd><span>Fill Eraser</span></div>
+        <div class="shortcutRow"><kbd>7</kbd><span>Lasso Fill</span></div>
+        <div class="shortcutRow"><kbd>8</kbd><span>Lasso Erase</span></div>
+        <div class="shortcutRow"><kbd>9</kbd><span>Rect Select</span></div>
+        <div class="shortcutRow"><kbd>0</kbd><span>Eyedropper</span></div>
       </div>
       <div class="shortcutSection">
         <h4>Navigation</h4>

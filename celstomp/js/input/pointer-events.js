@@ -11,6 +11,10 @@ let usePressureTilt = false;
 let brushSize = 3;
 let autofill = false;
 
+let textEntryActive = false;
+let textEntryX = 0;
+let textEntryY = 0;
+
 let trailPoints = [];
 
 function pressure(e) {
@@ -264,6 +268,10 @@ function startStroke(e) {
   }
   if (tool === "eyedropper") {
       pickCanvasColorAtEvent(e);
+      return;
+  }
+  if (tool === "text") {
+      openTextEntryAt(x, y);
       return;
   }
   if (tool === "rect-select") {
@@ -1487,3 +1495,97 @@ function fillFromLineart(F) {
     updateTimelineHasContent(F);
     return true;
 }
+
+function openTextEntryAt(cx, cy) {
+    const dialog = document.getElementById("canvasTextEntry");
+    const input = document.getElementById("canvasTextEntryInput");
+    if (!dialog) return;
+    textEntryX = Math.round(cx);
+    textEntryY = Math.round(cy);
+    textEntryActive = true;
+    input.value = "";
+    dialog.hidden = false;
+    dialog.classList.add("open");
+    setTimeout(() => input.focus(), 50);
+}
+
+function closeTextEntry() {
+    const dialog = document.getElementById("canvasTextEntry");
+    if (!dialog) return;
+    textEntryActive = false;
+    dialog.hidden = true;
+    dialog.classList.remove("open");
+}
+
+function applyTextEntry() {
+    const input = document.getElementById("canvasTextEntryInput");
+    const sizeInput = document.getElementById("canvasTextEntrySize");
+    const fontSelect = document.getElementById("canvasTextEntryFont");
+    const boldCheck = document.getElementById("canvasTextEntryBold");
+    const italicCheck = document.getElementById("canvasTextEntryItalic");
+    if (!input) return;
+    const text = input.value;
+    if (!text) {
+        closeTextEntry();
+        return;
+    }
+    const fontSize = Math.max(8, Math.min(200, parseInt(sizeInput?.value || "32", 10) || 32));
+    const fontFamily = fontSelect?.value || "Arial";
+    const bold = boldCheck?.checked ? "bold " : "";
+    const italic = italicCheck?.checked ? "italic " : "";
+    const fontStyle = `${italic}${bold}${fontSize}px ${fontFamily}`;
+    if (activeLayer === PAPER_LAYER) {
+        closeTextEntry();
+        return;
+    }
+    const hex = colorToHex(currentColor);
+    const key = activeLayer === LAYER.FILL ? fillWhite : hex;
+    beginGlobalHistoryStep(activeLayer, currentFrame, key);
+    pushUndo(activeLayer, currentFrame, key);
+    const canvas = getFrameCanvas(activeLayer, currentFrame, key);
+    if (!canvas) {
+        closeTextEntry();
+        return;
+    }
+    const ctx = canvas.getContext("2d");
+    ctx.font = fontStyle;
+    ctx.fillStyle = hex;
+    ctx.textBaseline = "top";
+    const lines = text.split("\n");
+    let lineY = textEntryY;
+    for (const line of lines) {
+        ctx.fillText(line, textEntryX, lineY);
+        lineY += fontSize * 1.2;
+    }
+    canvas._hasContent = true;
+    markGlobalHistoryDirty();
+    commitGlobalHistoryStep();
+    queueRenderAll();
+    updateTimelineHasContent(currentFrame);
+    closeTextEntry();
+}
+
+function initTextEntry() {
+    const dialog = document.getElementById("canvasTextEntry");
+    const cancelBtn = document.getElementById("canvasTextEntryCancel");
+    const applyBtn = document.getElementById("canvasTextEntryApply");
+    const input = document.getElementById("canvasTextEntryInput");
+    if (!dialog) return;
+    cancelBtn?.addEventListener("click", closeTextEntry);
+    applyBtn?.addEventListener("click", applyTextEntry);
+    input?.addEventListener("keydown", e => {
+        if (e.key === "Escape") {
+            e.preventDefault();
+            closeTextEntry();
+        }
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            applyTextEntry();
+        }
+    });
+    dialog.addEventListener("click", e => {
+        if (e.target === dialog) closeTextEntry();
+    });
+}
+
+document.addEventListener("DOMContentLoaded", initTextEntry);

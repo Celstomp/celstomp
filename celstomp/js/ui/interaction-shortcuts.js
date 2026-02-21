@@ -605,7 +605,9 @@ function wireKeyboardShortcuts() {
       5: "lasso-fill",
       6: "lasso-erase",
       7: "rect-select",
-      8: "eyedropper"
+      8: "eyedropper",
+      9: "text",
+      t: "text"
   };
   document.addEventListener("keydown", e => {
       if (e.defaultPrevented) return;

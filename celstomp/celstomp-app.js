@@ -884,7 +884,13 @@
             safeSetChecked(onion, onionEnabled);
             safeSetChecked(psnap, playSnapped);
             toggle?.addEventListener("click", () => {
-                if (isPlaying) pausePlayback(); else startPlayback();
+                if (isPlaying) {
+                    pausePlayback();
+                    toggle.classList.remove("playing");
+                } else {
+                    startPlayback();
+                    toggle.classList.add("playing");
+                }
             });
             prevF?.addEventListener("click", () => gotoFrame(stepBySnap(-1)));
             nextF?.addEventListener("click", () => gotoFrame(stepBySnap(1)));

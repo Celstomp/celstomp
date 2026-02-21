@@ -250,6 +250,122 @@ body.dragging-cel{ cursor: grabbing; user-select:none; }
 #timelineHeader input[type="number"],
 #timelineHeader .chip{ min-height:36px; }
 
+.tl-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tl-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.tl-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #c7d0db;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tl-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tl-icon-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.tl-icon-btn.danger:hover {
+  background: rgba(255, 82, 82, 0.2);
+  color: #ff5252;
+}
+
+.tl-icon-btn svg {
+  pointer-events: none;
+}
+
+.tl-play-btn {
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 229, 255, 0.15);
+  color: #9fd5ff;
+}
+
+.tl-play-btn:hover {
+  background: rgba(0, 229, 255, 0.25);
+}
+
+.tl-play-btn.playing .play-icon { display: none; }
+.tl-play-btn.playing .pause-icon { display: block !important; }
+
+.tl-num-input {
+  width: 60px;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #e2e8f0;
+  font-size: 12px;
+  -moz-appearance: textfield;
+}
+
+.tl-num-input::-webkit-outer-spin-button,
+.tl-num-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.tl-num-input-sm {
+  width: 48px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #e2e8f0;
+  font-size: 11px;
+  -moz-appearance: textfield;
+}
+
+.tl-num-input-sm::-webkit-outer-spin-button,
+.tl-num-input-sm::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.tl-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 12px;
+  color: #c7d0db;
+  cursor: pointer;
+}
+
+.tl-chip input[type="checkbox"] {
+  margin: 0;
+}
+
+.tl-opts-group {
+  background: transparent;
+}
+
 .tlMobArrow{ display:none; }
 
 @media (max-width: 900px){

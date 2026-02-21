@@ -48,6 +48,17 @@ document.getElementById('part-timeline').innerHTML = `
         <span class="timelineZoom">Zoom</span>
         <button id="zoomTimelineIn" class="miniBtn" title="Zoom In">+</button>
 
+        <div class="gridGuideCtrls">
+          <button id="toggleGridBtn" class="miniBtn" title="Toggle Grid (G)">Grid</button>
+          <input id="gridSizeInput" type="number" min="8" max="128" value="32" title="Grid Size" style="width:50px;" />
+          <button id="toggleGridSnapBtn" class="miniBtn" title="Toggle Grid Snap">Snap</button>
+          <button id="toggleGuidesBtn" class="miniBtn" title="Toggle Guides">Guides</button>
+          <button id="toggleGuideSnapBtn" class="miniBtn" title="Toggle Guide Snap">GSnap</button>
+          <button id="addGuideHBtn" class="miniBtn" title="Add Horizontal Guide">H Guide</button>
+          <button id="addGuideVBtn" class="miniBtn" title="Add Vertical Guide">V Guide</button>
+          <button id="clearGuidesBtn" class="miniBtn danger" title="Clear Guides">Clear</button>
+        </div>
+
         <button id="hideTimelineBtn">—</button>
       </div>
     </div>
@@ -60,6 +71,6 @@ document.getElementById('part-timeline').innerHTML = `
     </div>
   </section>
 
-
   <button id="showTimelineEdge" class="edge-btn">Show Timeline</button>
+  <div id="guideModeHint" class="guideModeHint" hidden></div>
 `;

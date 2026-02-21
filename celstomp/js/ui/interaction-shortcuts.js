@@ -601,11 +601,12 @@ function wireKeyboardShortcuts() {
       1: "brush",
       2: "eraser",
       3: "fill-brush",
-      4: "fill-eraser",
-      5: "lasso-fill",
-      6: "lasso-erase",
-      7: "rect-select",
-      8: "eyedropper"
+      4: "rect",
+      5: "fill-eraser",
+      6: "lasso-fill",
+      7: "lasso-erase",
+      8: "rect-select",
+      9: "eyedropper"
   };
   document.addEventListener("keydown", e => {
       if (e.defaultPrevented) return;

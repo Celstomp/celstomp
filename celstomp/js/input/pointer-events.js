@@ -12,6 +12,8 @@ let brushSize = 3;
 let autofill = false;
 
 let trailPoints = [];
+let rectToolStart = null;
+let rectToolPreview = null;
 
 function pressure(e) {
     const pid = Number.isFinite(e?.pointerId) ? e.pointerId : -1;
@@ -266,6 +268,17 @@ function startStroke(e) {
       pickCanvasColorAtEvent(e);
       return;
   }
+  if (tool === "rect") {
+      isDrawing = true;
+      const hex = colorToHex(currentColor);
+      strokeHex = activeLayer === LAYER.FILL ? fillWhite : hex;
+      activeSubColor[activeLayer] = strokeHex;
+      ensureSublayer(activeLayer, strokeHex);
+      renderLayerSwatches(activeLayer);
+      rectToolStart = { x, y };
+      rectToolPreview = { x, y };
+      return;
+  }
   if (tool === "rect-select") {
       isDrawing = true;
       beginRectSelect(e);
@@ -396,6 +409,11 @@ function continueStroke(e) {
       x: x,
       y: y
   };
+  if (tool === "rect") {
+      rectToolPreview = { x, y };
+      queueRenderAll();
+      return;
+  }
   if (tool === "rect-select") {
       updateRectSelect(e);
       lastPt = {
@@ -468,6 +486,24 @@ function endStroke() {
   strokeHex = null;
   queueRenderAll();
   updateTimelineHasContent(currentFrame);
+  if (tool === "rect" && rectToolStart && rectToolPreview) {
+      const hex = strokeHex || activeSubColor?.[activeLayer] || colorToHex(currentColor);
+      const off = getFrameCanvas(activeLayer, currentFrame, hex);
+      const ctx = off.getContext("2d");
+      ctx.strokeStyle = hex;
+      ctx.lineWidth = Math.max(1, brushSize);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.rect(rectToolStart.x, rectToolStart.y, rectToolPreview.x - rectToolStart.x, rectToolPreview.y - rectToolStart.y);
+      ctx.stroke();
+      off._hasContent = true;
+      rectToolStart = null;
+      rectToolPreview = null;
+      queueRenderAll();
+      lastPt = null;
+      stabilizedPt = null;
+      return;
+  }
   if (tool === "rect-select") {
       endRectSelect();
       lastPt = null;
@@ -1486,4 +1522,16 @@ function fillFromLineart(F) {
     queueRenderAll();
     updateTimelineHasContent(F);
     return true;
+}
+
+function drawRectToolPreview(ctx) {
+    if (!rectToolStart || !rectToolPreview) return;
+    ctx.save();
+    ctx.strokeStyle = colorToHex(currentColor);
+    ctx.lineWidth = Math.max(1, brushSize) / Math.max(getZoom(), 1);
+    ctx.setLineDash([4 / Math.max(getZoom(), 1), 2 / Math.max(getZoom(), 1)]);
+    ctx.beginPath();
+    ctx.rect(rectToolStart.x, rectToolStart.y, rectToolPreview.x - rectToolStart.x, rectToolPreview.y - rectToolStart.y);
+    ctx.stroke();
+    ctx.restore();
 }

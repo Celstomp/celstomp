@@ -358,6 +358,7 @@
             bctx.fillRect(0, 0, contentW, contentH);
             bctx.strokeRect(0, 0, contentW, contentH);
             drawRectSelectionOverlay(fxctx);
+            drawRectToolPreview(fxctx);
         }
 
         function onionCompositeOperation() {
@@ -404,6 +405,9 @@
         function clearFx() {
             fxctx.setTransform(1, 0, 0, 1, 0, 0);
             fxctx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            setTransform(fxctx);
+            drawRectSelectionOverlay(fxctx);
+            drawRectToolPreview(fxctx);
         }
 
         function wireBrushButtonRightClick() {

@@ -600,14 +600,13 @@ function wireKeyboardShortcuts() {
   const toolByKey = {
       1: "brush",
       2: "eraser",
-      3: "line",
+      3: "fill-brush",
       4: "rect",
-      5: "fill-brush",
-      6: "fill-eraser",
-      7: "lasso-fill",
-      8: "lasso-erase",
-      9: "rect-select",
-      0: "eyedropper"
+      5: "fill-eraser",
+      6: "lasso-fill",
+      7: "lasso-erase",
+      8: "rect-select",
+      9: "eyedropper"
   };
   document.addEventListener("keydown", e => {
       if (e.defaultPrevented) return;

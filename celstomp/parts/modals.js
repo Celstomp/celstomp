@@ -71,12 +71,17 @@ document.getElementById('part-modals').innerHTML = `
         <div class="shortcutRow"><kbd>R</kbd><span>Next Frame</span></div>
       </div>
       <div class="shortcutSection">
+        <h4>Selection</h4>
+        <div class="shortcutRow"><kbd>H</kbd><span>Flip Horizontal</span></div>
+        <div class="shortcutRow"><kbd>V</kbd><span>Flip Vertical</span></div>
+        <div class="shortcutRow"><kbd>Del</kbd><span>Delete Selection</span></div>
+      </div>
+      <div class="shortcutSection">
         <h4>Actions</h4>
         <div class="shortcutRow"><kbd>Space</kbd><span>Play/Pause</span></div>
         <div class="shortcutRow"><kbd>Ctrl+Z</kbd><span>Undo</span></div>
         <div class="shortcutRow"><kbd>Ctrl+Y</kbd><span>Redo</span></div>
         <div class="shortcutRow"><kbd>Ctrl+Shift+Z</kbd><span>Redo</span></div>
-        <div class="shortcutRow"><kbd>Del</kbd><span>Delete Selection/Color</span></div>
         <div class="shortcutRow"><kbd>F</kbd><span>Fill Current Frame</span></div>
         <div class="shortcutRow"><kbd>O</kbd><span>Toggle Onion</span></div>
       </div>

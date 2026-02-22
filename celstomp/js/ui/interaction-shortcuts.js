@@ -641,12 +641,13 @@ function wireKeyboardShortcuts() {
   const toolByKey = {
       1: "brush",
       2: "eraser",
-      3: "fill-brush",
-      4: "fill-eraser",
-      5: "lasso-fill",
-      6: "lasso-erase",
-      7: "rect-select",
-      8: "eyedropper"
+      3: "line",
+      4: "fill-brush",
+      5: "fill-eraser",
+      6: "lasso-fill",
+      7: "lasso-erase",
+      8: "rect-select",
+      9: "eyedropper"
   };
   document.addEventListener("keydown", e => {
       if (e.defaultPrevented) return;
@@ -733,25 +734,32 @@ function onWindowKeyDown(e) {
                 if (isDigit(3)) {
                     e.preventDefault();
                     pickTool({
+                        id: "tool-line",
+                        value: "line"
+                    });
+                }
+                if (isDigit(4)) {
+                    e.preventDefault();
+                    pickTool({
                         id: "tool-fillbrush",
                         value: "fill-brush"
                     });
                 }
-                if (isDigit(4)) {
+                if (isDigit(5)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-filleraser",
                         value: "fill-eraser"
                     });
                 }
-                if (isDigit(5)) {
+                if (isDigit(6)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-lassoFill",
                         value: "lasso-fill"
                     });
                 }
-                if (isDigit(6)) {
+                if (isDigit(7)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-lassoErase",
@@ -759,14 +767,14 @@ function onWindowKeyDown(e) {
                         value: "lasso-erase"
                     });
                 }
-                if (isDigit(7)) {
+                if (isDigit(8)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-rectSelect",
                         value: "rect-select"
                     });
                 }
-                if (isDigit(8)) {
+                if (isDigit(9)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-eyedropper",

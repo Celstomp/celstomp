@@ -52,13 +52,14 @@ document.getElementById('part-modals').innerHTML = `
         <h4>Tools</h4>
         <div class="shortcutRow"><kbd>1</kbd><span>Brush</span></div>
         <div class="shortcutRow"><kbd>2</kbd><span>Eraser</span></div>
-        <div class="shortcutRow"><kbd>3</kbd><span>Fill Brush</span></div>
+        <div class="shortcutRow"><kbd>3</kbd><span>Line</span></div>
         <div class="shortcutRow"><kbd>4</kbd><span>Rect</span></div>
-        <div class="shortcutRow"><kbd>5</kbd><span>Fill Eraser</span></div>
-        <div class="shortcutRow"><kbd>6</kbd><span>Lasso Fill</span></div>
-        <div class="shortcutRow"><kbd>7</kbd><span>Lasso Erase</span></div>
-        <div class="shortcutRow"><kbd>8</kbd><span>Rect Select</span></div>
-        <div class="shortcutRow"><kbd>9</kbd><span>Eyedropper</span></div>
+        <div class="shortcutRow"><kbd>5</kbd><span>Fill Brush</span></div>
+        <div class="shortcutRow"><kbd>6</kbd><span>Fill Eraser</span></div>
+        <div class="shortcutRow"><kbd>7</kbd><span>Lasso Fill</span></div>
+        <div class="shortcutRow"><kbd>8</kbd><span>Lasso Erase</span></div>
+        <div class="shortcutRow"><kbd>9</kbd><span>Rect Select</span></div>
+        <div class="shortcutRow"><kbd>0</kbd><span>Eyedropper</span></div>
       </div>
       <div class="shortcutSection">
         <h4>Navigation</h4>
@@ -72,12 +73,17 @@ document.getElementById('part-modals').innerHTML = `
         <div class="shortcutRow"><kbd>R</kbd><span>Next Frame</span></div>
       </div>
       <div class="shortcutSection">
+        <h4>Selection</h4>
+        <div class="shortcutRow"><kbd>H</kbd><span>Flip Horizontal</span></div>
+        <div class="shortcutRow"><kbd>V</kbd><span>Flip Vertical</span></div>
+        <div class="shortcutRow"><kbd>Del</kbd><span>Delete Selection</span></div>
+      </div>
+      <div class="shortcutSection">
         <h4>Actions</h4>
         <div class="shortcutRow"><kbd>Space</kbd><span>Play/Pause</span></div>
         <div class="shortcutRow"><kbd>Ctrl+Z</kbd><span>Undo</span></div>
         <div class="shortcutRow"><kbd>Ctrl+Y</kbd><span>Redo</span></div>
         <div class="shortcutRow"><kbd>Ctrl+Shift+Z</kbd><span>Redo</span></div>
-        <div class="shortcutRow"><kbd>Del</kbd><span>Delete Selection/Color</span></div>
         <div class="shortcutRow"><kbd>F</kbd><span>Fill Current Frame</span></div>
         <div class="shortcutRow"><kbd>O</kbd><span>Toggle Onion</span></div>
       </div>

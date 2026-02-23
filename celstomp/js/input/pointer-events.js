@@ -14,6 +14,8 @@ let autofill = false;
 let trailPoints = [];
 let rectToolStart = null;
 let rectToolPreview = null;
+let lineToolStart = null;
+let lineToolPreview = null;
 
 function pressure(e) {
     const pid = Number.isFinite(e?.pointerId) ? e.pointerId : -1;
@@ -351,6 +353,17 @@ function startStroke(e) {
       startPan(e);
       return;
   }
+  if (tool === "line") {
+      isDrawing = true;
+      const hex = colorToHex(currentColor);
+      strokeHex = activeLayer === LAYER.FILL ? fillWhite : hex;
+      activeSubColor[activeLayer] = strokeHex;
+      ensureSublayer(activeLayer, strokeHex);
+      renderLayerSwatches(activeLayer);
+      lineToolStart = { x, y };
+      lineToolPreview = { x, y };
+      return;
+  }
   if (activeLayer === PAPER_LAYER) {
       return;
   }
@@ -420,6 +433,11 @@ function continueStroke(e) {
           x: x,
           y: y
       };
+      return;
+  }
+  if (tool === "line") {
+      lineToolPreview = { x, y };
+      queueRenderAll();
       return;
   }
   if (tool === "fill-eraser" || tool === "fill-brush") {
@@ -508,6 +526,25 @@ function endStroke() {
       endRectSelect();
       lastPt = null;
       stabilizedPt = null;
+      return;
+  }
+  if (tool === "line" && lineToolStart && lineToolPreview) {
+      const hex = strokeHex || activeSubColor?.[activeLayer] || colorToHex(currentColor);
+      const off = getFrameCanvas(activeLayer, currentFrame, hex);
+      const ctx = off.getContext("2d");
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = brushSize;
+      ctx.strokeStyle = hex;
+      ctx.beginPath();
+      ctx.moveTo(lineToolStart.x, lineToolStart.y);
+      ctx.lineTo(lineToolPreview.x, lineToolPreview.y);
+      ctx.stroke();
+      markFrameHasContent(activeLayer, currentFrame, hex);
+      lineToolStart = null;
+      lineToolPreview = null;
+      queueRenderAll();
+      updateTimelineHasContent(currentFrame);
       return;
   }
   if (tool === "lasso-erase" && lassoActive) {
@@ -877,6 +914,20 @@ function drawRectSelectionOverlay(ctx) {
     ctx.fillStyle = "rgba(0, 229, 255, 0.12)";
     ctx.fillRect(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
     ctx.strokeRect(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
+    ctx.restore();
+}
+function drawLineToolPreview(ctx) {
+    if (!lineToolStart || !lineToolPreview) return;
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = brushSize;
+    ctx.strokeStyle = currentColor;
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(lineToolStart.x, lineToolStart.y);
+    ctx.lineTo(lineToolPreview.x, lineToolPreview.y);
+    ctx.stroke();
     ctx.restore();
 }
 function beginRectSelect(e) {

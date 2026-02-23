@@ -358,6 +358,7 @@
             bctx.fillRect(0, 0, contentW, contentH);
             bctx.strokeRect(0, 0, contentW, contentH);
             drawRectSelectionOverlay(fxctx);
+            drawLineToolPreview(fxctx);
             drawRectToolPreview(fxctx);
         }
 
@@ -407,6 +408,7 @@
             fxctx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
             setTransform(fxctx);
             drawRectSelectionOverlay(fxctx);
+            drawLineToolPreview(fxctx);
             drawRectToolPreview(fxctx);
         }
 

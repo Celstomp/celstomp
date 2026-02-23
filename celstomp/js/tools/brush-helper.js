@@ -315,7 +315,7 @@ function getBrushSizeForPreview(toolKind) {
 function updateBrushPreview() {
     if (!_brushPrevEl || !_brushPrevCanvas) return;
     const toolKind = getActiveToolKindForPreview();
-    const showForTools = toolKind === "brush" || toolKind === "eraser" || toolKind === "line";
+    const showForTools = toolKind === "brush" || toolKind === "eraser" || toolKind === "line" || toolKind === "rect";
     const isEraser = toolKind === "eraser";
     if (!showForTools) {
         _brushPrevEl.style.display = "none";

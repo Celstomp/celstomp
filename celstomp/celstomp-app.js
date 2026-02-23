@@ -149,6 +149,9 @@
         const eraserSizeInput = $("eraserSize");
         const toolOpacityRange = $("toolOpacityRange");
         const toolAngleRange = $("toolAngleRange");
+        const toolOpacityRow = toolOpacityRange?.closest(".sideRangeRow") || null;
+        const toolAngleRow = toolAngleRange?.closest(".sideRangeRow") || null;
+        const brushFoldSection = toolFoldBrushesBtn?.closest(".toolFold") || null;
         const eraserVal = $("eraserVal");
     
 
@@ -183,16 +186,25 @@
         function refreshToolSettingsUI() {
             const isBrush = tool === "brush";
             const isEraser = tool === "eraser";
-            if (toolSettingsSection) toolSettingsSection.hidden = !(isBrush || isEraser);
-            if (!isBrush && !isEraser) return;
+            const isLine = tool === "line";
+            const isRect = tool === "rect";
+            const isShapeTool = isLine || isRect;
+            const showsBrushSettings = isBrush || isShapeTool;
+            if (toolSettingsSection) toolSettingsSection.hidden = !(showsBrushSettings || isEraser);
+            if (brushFoldSection) brushFoldSection.hidden = isShapeTool;
+            if (toolOpacityRow) toolOpacityRow.hidden = isShapeTool;
+            if (toolAngleRow) toolAngleRow.hidden = isShapeTool;
+            if (!showsBrushSettings && !isEraser) return;
             const s = isEraser ? eraserSettings : brushSettings;
-            if (toolSettingsTitle) toolSettingsTitle.textContent = isEraser ? "Eraser" : "Brushes";
+            if (toolSettingsTitle) toolSettingsTitle.textContent = isEraser ? "Eraser" : isShapeTool ? "Shape Tool" : "Brushes";
             safeSetValue(brushSizeInput, s.size);
             safeSetValue(brushSizeNumInput, s.size);
             safeSetValue(toolOpacityRange, Math.round(s.opacity * 100));
             safeSetValue(toolAngleRange, s.angle);
-            const activeShape = document.querySelector('input[name="brushShape"][value="' + s.shape + '"]');
-            if (activeShape) activeShape.checked = true;
+            if (!isShapeTool) {
+                const activeShape = document.querySelector('input[name="brushShape"][value="' + s.shape + '"]');
+                if (activeShape) activeShape.checked = true;
+            }
         }
         function setFoldExpanded(btn, body, open) {
             if (!btn || !body) return;

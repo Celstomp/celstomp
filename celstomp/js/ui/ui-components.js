@@ -4,6 +4,7 @@
     const tools = [
         { id: 'tool-brush', val: 'brush', label: 'Brush', checked: true },
         { id: 'tool-eraser', val: 'eraser', label: 'Eraser' },
+        { id: 'tool-line', val: 'line', label: 'Line', icon: '<svg viewBox="0 0 24 24" width="18" height="18"><line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>' },
         { id: 'tool-fillbrush', val: 'fill-brush', label: 'Fill Brush' },
         { id: 'tool-filleraser', val: 'fill-eraser', label: 'Eraser Fill' },
         { id: 'tool-lassoFill', val: 'lasso-fill', label: 'Lasso Fill' },
@@ -27,7 +28,12 @@
             const lbl = document.createElement('label');
             lbl.htmlFor = t.id;
             lbl.dataset.tool = t.val;
-            lbl.textContent = t.label;
+            lbl.setAttribute('aria-label', t.label);
+            if (t.icon) {
+                lbl.innerHTML = t.icon;
+            } else {
+                lbl.textContent = t.label;
+            }
 
             if (t.val === 'brush') lbl.id = 'toolBrushLabel';
             if (t.val === 'eraser') lbl.id = 'toolEraserLabel';

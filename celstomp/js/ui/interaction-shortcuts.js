@@ -580,6 +580,47 @@ function _wireExtraKeyboardShortcuts() {
       }, true);
   }
 }
+
+function flipSelection(horizontal) {
+    if (!rectSelection.active) return;
+    const c = getFrameCanvas(rectSelection.L, rectSelection.F, rectSelection.key);
+    if (!c) return;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+
+    const selSnap = ctx.getImageData(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
+    const fullSnap = ctx.getImageData(0, 0, contentW, contentH);
+
+    beginGlobalHistoryStep(rectSelection.L, rectSelection.F, rectSelection.key);
+
+    ctx.clearRect(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
+
+    const flipped = ctx.createImageData(rectSelection.w, rectSelection.h);
+    const src = selSnap.data;
+    const dst = flipped.data;
+
+    for (let y = 0; y < rectSelection.h; y++) {
+        for (let x = 0; x < rectSelection.w; x++) {
+            const srcIdx = (y * rectSelection.w + x) * 4;
+            const dstY = horizontal ? y : (rectSelection.h - 1 - y);
+            const dstX = horizontal ? (rectSelection.w - 1 - x) : x;
+            const dstIdx = (dstY * rectSelection.w + dstX) * 4;
+            dst[dstIdx] = src[srcIdx];
+            dst[dstIdx + 1] = src[srcIdx + 1];
+            dst[dstIdx + 2] = src[srcIdx + 2];
+            dst[dstIdx + 3] = src[srcIdx + 3];
+        }
+    }
+
+    ctx.putImageData(flipped, rectSelection.x, rectSelection.y);
+
+    markGlobalHistoryDirty();
+    commitGlobalHistoryStep();
+    recomputeHasContent(rectSelection.L, rectSelection.F, rectSelection.key);
+    queueRenderAll();
+    updateTimelineHasContent(rectSelection.F);
+}
+
 function wireKeyboardShortcuts() {
   if (document._celstompKeysWired) return;
   document._celstompKeysWired = true;
@@ -600,13 +641,14 @@ function wireKeyboardShortcuts() {
   const toolByKey = {
       1: "brush",
       2: "eraser",
-      3: "fill-brush",
-      4: "fill-eraser",
-      5: "lasso-fill",
-      6: "lasso-erase",
-      7: "rect-select",
-      8: "eyedropper",
-      9: "text",
+      3: "line",
+      4: "rect",
+      5: "fill-brush",
+      6: "fill-eraser",
+      7: "lasso-fill",
+      8: "lasso-erase",
+      9: "rect-select",
+      0: "eyedropper",
       t: "text"
   };
   document.addEventListener("keydown", e => {
@@ -694,25 +736,39 @@ function onWindowKeyDown(e) {
                 if (isDigit(3)) {
                     e.preventDefault();
                     pickTool({
+                        id: "tool-line",
+                        value: "line"
+                    });
+                }
+                if (isDigit(4)) {
+                    e.preventDefault();
+                    pickTool({
+                        id: "tool-rect",
+                        value: "rect"
+                    });
+                }
+                if (isDigit(5)) {
+                    e.preventDefault();
+                    pickTool({
                         id: "tool-fillbrush",
                         value: "fill-brush"
                     });
                 }
-                if (isDigit(4)) {
+                if (isDigit(6)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-filleraser",
                         value: "fill-eraser"
                     });
                 }
-                if (isDigit(5)) {
+                if (isDigit(7)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-lassoFill",
                         value: "lasso-fill"
                     });
                 }
-                if (isDigit(6)) {
+                if (isDigit(8)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-lassoErase",
@@ -720,14 +776,14 @@ function onWindowKeyDown(e) {
                         value: "lasso-erase"
                     });
                 }
-                if (isDigit(7)) {
+                if (isDigit(9)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-rectSelect",
                         value: "rect-select"
                     });
                 }
-                if (isDigit(8)) {
+                if (isDigit(0)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-eyedropper",
@@ -748,6 +804,14 @@ function onWindowKeyDown(e) {
         if (rectSelection.active) {
             e.preventDefault();
             clearRectSelection();
+            return;
+        }
+    }
+    if (rectSelection.active && (e.key.toLowerCase() === "h" || e.key.toLowerCase() === "v")) {
+        const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : "";
+        if (tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
+            e.preventDefault();
+            flipSelection(e.key.toLowerCase() === "h");
             return;
         }
     }

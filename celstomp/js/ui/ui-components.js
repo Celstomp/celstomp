@@ -5,6 +5,7 @@
         { id: 'tool-brush', val: 'brush', label: 'Brush', checked: true },
         { id: 'tool-eraser', val: 'eraser', label: 'Eraser' },
         { id: 'tool-line', val: 'line', label: 'Line', icon: '<svg viewBox="0 0 24 24" width="18" height="18"><line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>' },
+        { id: 'tool-rect', val: 'rect', label: 'Rect', icon: '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>' },
         { id: 'tool-fillbrush', val: 'fill-brush', label: 'Fill Brush' },
         { id: 'tool-filleraser', val: 'fill-eraser', label: 'Eraser Fill' },
         { id: 'tool-lassoFill', val: 'lasso-fill', label: 'Lasso Fill' },

@@ -12,6 +12,8 @@ let brushSize = 3;
 let autofill = false;
 
 let trailPoints = [];
+let rectToolStart = null;
+let rectToolPreview = null;
 let lineToolStart = null;
 let lineToolPreview = null;
 
@@ -268,6 +270,18 @@ function startStroke(e) {
       pickCanvasColorAtEvent(e);
       return;
   }
+  if (tool === "rect") {
+      isDrawing = true;
+      const hex = colorToHex(currentColor);
+      strokeHex = activeLayer === LAYER.FILL ? fillWhite : hex;
+      activeSubColor[activeLayer] = strokeHex;
+      ensureSublayer(activeLayer, strokeHex);
+      renderLayerSwatches(activeLayer);
+      beginGlobalHistoryStep(activeLayer, currentFrame, strokeHex);
+      rectToolStart = { x, y };
+      rectToolPreview = { x, y };
+      return;
+  }
   if (tool === "rect-select") {
       isDrawing = true;
       beginRectSelect(e);
@@ -347,6 +361,7 @@ function startStroke(e) {
       activeSubColor[activeLayer] = strokeHex;
       ensureSublayer(activeLayer, strokeHex);
       renderLayerSwatches(activeLayer);
+      beginGlobalHistoryStep(activeLayer, currentFrame, strokeHex);
       lineToolStart = { x, y };
       lineToolPreview = { x, y };
       return;
@@ -409,6 +424,11 @@ function continueStroke(e) {
       x: x,
       y: y
   };
+  if (tool === "rect") {
+      rectToolPreview = { x, y };
+      queueRenderAll();
+      return;
+  }
   if (tool === "rect-select") {
       updateRectSelect(e);
       lastPt = {
@@ -481,11 +501,34 @@ function continueStroke(e) {
 function endStroke() {
   if (!isDrawing) return;
   isDrawing = false;
-  commitGlobalHistoryStep();
   const endKey = strokeHex;
-  strokeHex = null;
-  queueRenderAll();
-  updateTimelineHasContent(currentFrame);
+  const finishingRect = tool === "rect" && rectToolStart && rectToolPreview;
+  const finishingLine = tool === "line" && lineToolStart && lineToolPreview;
+  if (!finishingRect && !finishingLine) {
+      commitGlobalHistoryStep();
+  }
+  if (tool === "rect" && rectToolStart && rectToolPreview) {
+      const hex = strokeHex || activeSubColor?.[activeLayer] || colorToHex(currentColor);
+      const off = getFrameCanvas(activeLayer, currentFrame, hex);
+      const ctx = off.getContext("2d");
+      ctx.strokeStyle = hex;
+      ctx.lineWidth = Math.max(1, brushSize);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.rect(rectToolStart.x, rectToolStart.y, rectToolPreview.x - rectToolStart.x, rectToolPreview.y - rectToolStart.y);
+      ctx.stroke();
+      markFrameHasContent(activeLayer, currentFrame, hex);
+      markGlobalHistoryDirty();
+      commitGlobalHistoryStep();
+      rectToolStart = null;
+      rectToolPreview = null;
+      strokeHex = null;
+      queueRenderAll();
+      updateTimelineHasContent(currentFrame);
+      lastPt = null;
+      stabilizedPt = null;
+      return;
+  }
   if (tool === "rect-select") {
       endRectSelect();
       lastPt = null;
@@ -505,12 +548,18 @@ function endStroke() {
       ctx.lineTo(lineToolPreview.x, lineToolPreview.y);
       ctx.stroke();
       markFrameHasContent(activeLayer, currentFrame, hex);
+      markGlobalHistoryDirty();
+      commitGlobalHistoryStep();
       lineToolStart = null;
       lineToolPreview = null;
+      strokeHex = null;
       queueRenderAll();
       updateTimelineHasContent(currentFrame);
       return;
   }
+  strokeHex = null;
+  queueRenderAll();
+  updateTimelineHasContent(currentFrame);
   if (tool === "lasso-erase" && lassoActive) {
       lassoActive = false;
       applyLassoErase();
@@ -1537,4 +1586,16 @@ function fillFromLineart(F) {
     queueRenderAll();
     updateTimelineHasContent(F);
     return true;
+}
+
+function drawRectToolPreview(ctx) {
+    if (!rectToolStart || !rectToolPreview) return;
+    ctx.save();
+    ctx.strokeStyle = colorToHex(currentColor);
+    ctx.lineWidth = Math.max(1, brushSize);
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.rect(rectToolStart.x, rectToolStart.y, rectToolPreview.x - rectToolStart.x, rectToolPreview.y - rectToolStart.y);
+    ctx.stroke();
+    ctx.restore();
 }

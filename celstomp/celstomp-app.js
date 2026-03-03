@@ -1754,6 +1754,6 @@
         wireEraserButtonRightClick();
         wirePointerDrawingOnCanvas($("drawCanvas"));
 
-        openHomeModal();
+        startNewProject();
     });
 })();

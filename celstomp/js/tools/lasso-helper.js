@@ -1,6 +1,8 @@
 let lassoActive = false;
 let lassoPts = [];
 const lassoMinDist = 2.5;
+let _lassoPreviewScheduled = false;
+let _lassoLastPreviewMode = "fill";
 
 function addLassoPoint(pt) {
     const last = lassoPts[lassoPts.length - 1];
@@ -8,7 +10,19 @@ function addLassoPoint(pt) {
         lassoPts.push(pt);
     }
 }
+function scheduleLassoPreview(mode = "fill") {
+    _lassoLastPreviewMode = mode;
+    if (_lassoPreviewScheduled) return;
+    _lassoPreviewScheduled = true;
+    requestAnimationFrame(() => {
+        _lassoPreviewScheduled = false;
+        drawLassoPreviewImmediate(_lassoLastPreviewMode);
+    });
+}
 function drawLassoPreview(mode = "fill") {
+    scheduleLassoPreview(mode);
+}
+function drawLassoPreviewImmediate(mode = "fill") {
     const fxctx = getCanvas(CANVAS_TYPE.fxCanvas).getContext("2d");
     queueClearFx();
     if (lassoPts.length < 2) return;
@@ -26,7 +40,6 @@ function drawLassoPreview(mode = "fill") {
     }
     fxctx.globalAlpha = 1;
     fxctx.lineWidth = Math.max(1 / (getZoom() * dpr), .6);
-    fxctx.setLineDash([ 10 / getZoom(), 7 / getZoom() ]);
     fxctx.strokeStyle = isErase ? "rgba(255,90,90,0.95)" : "rgba(255,255,255,0.95)";
     fxctx.beginPath();
     fxctx.moveTo(lassoPts[0].x, lassoPts[0].y);

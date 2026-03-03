@@ -1036,6 +1036,7 @@
             const showLeft = $("showLeftEdge");
             const showRight = $("showRightEdge");
             const showTl = $("showTimelineEdge");
+            const timelineEl = $("timeline");
             const tLeft = $("toggleSidebarBtn");
             const tRight = $("toggleRightbarBtn");
             function applyLayoutChange() {
@@ -1057,7 +1058,27 @@
             }
             function setTimelineOpen(open) {
                 app.classList.toggle("tl-collapsed", !open);
+                document.body?.classList.toggle("tl-collapsed", !open);
+                if (timelineEl) {
+                    timelineEl.hidden = !open;
+                    timelineEl.style.display = open ? "" : "none";
+                    timelineEl.setAttribute("aria-hidden", open ? "false" : "true");
+                }
+                if (showTl) {
+                    showTl.style.display = open ? "none" : "block";
+                }
                 applyLayoutChange();
+            }
+            if (!document._celstompPanelToggleDelegated) {
+                document._celstompPanelToggleDelegated = true;
+                document.addEventListener("click", e => {
+                    if (e.target.closest("#hideLeftPanelBtn")) setLeftOpen(false);
+                    if (e.target.closest("#hideRightPanelBtn")) setRightOpen(false);
+                    if (e.target.closest("#hideTimelineBtn")) setTimelineOpen(false);
+                    if (e.target.closest("#showLeftEdge")) setLeftOpen(true);
+                    if (e.target.closest("#showRightEdge")) setRightOpen(true);
+                    if (e.target.closest("#showTimelineEdge")) setTimelineOpen(true);
+                });
             }
             setLeftOpen(true);
             setRightOpen(true);

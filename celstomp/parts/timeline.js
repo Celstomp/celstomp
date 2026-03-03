@@ -119,11 +119,29 @@ document.getElementById('part-timeline').innerHTML = `
           <input id="tlSnap" type="number" min="1" class="tl-num" style="width:40px;" />
         </div>
 
-        <button id="zoomTimelineOut" class="miniBtn" title="Zoom Out">−</button>
+        <button id="zoomTimelineOut" class="tl-tool-btn" title="Zoom Out" aria-label="Zoom Out">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="4.8" y1="7" x2="9.2" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
         <span class="timelineZoom">Zoom</span>
-        <button id="zoomTimelineIn" class="miniBtn" title="Zoom In">+</button>
+        <button id="zoomTimelineIn" class="tl-tool-btn" title="Zoom In" aria-label="Zoom In">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="4.8" y1="7" x2="9.2" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="7" y1="4.8" x2="7" y2="9.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
 
-        <button id="hideTimelineBtn">—</button>
+        <button id="hideTimelineBtn" class="tl-tool-btn" title="Hide Timeline" aria-label="Hide Timeline" onclick="document.body.classList.add('tl-collapsed');var t=document.getElementById('timeline');if(t){t.hidden=true;t.style.display='none';}var s=document.getElementById('showTimelineEdge');if(s){s.style.display='block';}window.dispatchEvent(new Event('resize'))">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <line x1="3" y1="4" x2="13" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <polyline points="5,7 8,10 11,7" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -136,5 +154,5 @@ document.getElementById('part-timeline').innerHTML = `
   </section>
 
 
-  <button id="showTimelineEdge" class="edge-btn">Show Timeline</button>
+  <button id="showTimelineEdge" class="edge-btn" onclick="document.body.classList.remove('tl-collapsed');var t=document.getElementById('timeline');if(t){t.hidden=false;t.style.display='';}this.style.display='none';window.dispatchEvent(new Event('resize'))">Show Timeline</button>
 `;

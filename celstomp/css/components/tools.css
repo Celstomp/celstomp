@@ -100,7 +100,8 @@
 
 .app.sidebar-collapsed #showLeftEdge{ display:block; }
 .app.rightbar-collapsed #showRightEdge{ display:block; }
-.app.tl-collapsed #showTimelineEdge{ display:block; }
+.app.tl-collapsed #showTimelineEdge,
+body.tl-collapsed #showTimelineEdge{ display:block; }
 
 
 /* Island Tools Context */

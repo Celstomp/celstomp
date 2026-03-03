@@ -21,7 +21,8 @@
   min-height:0;
 }
 
-.app.tl-collapsed #timeline{ display:none; }
+.app.tl-collapsed #timeline,
+body.tl-collapsed #timeline{ display:none; }
 
 #timelineHeader{
   display:flex;

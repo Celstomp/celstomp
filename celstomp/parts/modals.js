@@ -253,6 +253,18 @@ document.getElementById('part-modals').innerHTML = `
             <option value="Verdana">Verdana</option>
           </select>
         </div>
+        <div class="canvasTextEntryOpt">
+          <span>Align</span>
+          <select id="canvasTextEntryAlign" class="canvasTextEntrySelect">
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+        </div>
+        <div class="canvasTextEntryOpt">
+          <span>Outline Width</span>
+          <input id="canvasTextEntryStrokeWidth" class="canvasTextEntryNum" type="number" min="1" max="16" value="2" />
+        </div>
         <label class="canvasTextEntryOpt canvasTextEntryOptCheck">
           <input id="canvasTextEntryBold" type="checkbox" />
           <span>Bold</span>
@@ -260,6 +272,10 @@ document.getElementById('part-modals').innerHTML = `
         <label class="canvasTextEntryOpt canvasTextEntryOptCheck">
           <input id="canvasTextEntryItalic" type="checkbox" />
           <span>Italic</span>
+        </label>
+        <label class="canvasTextEntryOpt canvasTextEntryOptCheck">
+          <input id="canvasTextEntryStroke" type="checkbox" />
+          <span>Outline</span>
         </label>
       </div>
       <div class="canvasTextEntryActions">

@@ -295,6 +295,8 @@ function _wireTimelineEnhancements() {
   const zoomIn = $("zoomTimelineIn");
   const zoomOut = $("zoomTimelineOut");
 
+  applyTimelineFrameWidth(readTimelineFrameWidth());
+
   if (insertBtn) {
       insertBtn.addEventListener("click", () => insertFrame(currentFrame));
   }
@@ -317,32 +319,59 @@ function _wireTimelineEnhancements() {
   }
   if (zoomIn) {
       zoomIn.addEventListener("click", () => {
-          timelineFrameWidth = Math.min(100, timelineFrameWidth + 5);
-          renderTimeline();
+          applyTimelineFrameWidth(timelineFrameWidth + 5);
       });
   }
   if (zoomOut) {
       zoomOut.addEventListener("click", () => {
-          timelineFrameWidth = Math.max(15, timelineFrameWidth - 5);
-          renderTimeline();
+          applyTimelineFrameWidth(timelineFrameWidth - 5);
       });
   }
 }
+
+function readTimelineFrameWidth() {
+  const cssValue = getComputedStyle(document.documentElement).getPropertyValue("--frame-w");
+  const parsed = parseFloat(cssValue);
+  if (Number.isFinite(parsed)) return parsed;
+  return timelineFrameWidth;
+}
+
+function applyTimelineFrameWidth(value) {
+  const next = Math.max(15, Math.min(100, Math.round(Number(value) || 24)));
+  timelineFrameWidth = next;
+  document.documentElement.style.setProperty("--frame-w", `${next}px`);
+  if (typeof updatePlayheadMarker === "function") updatePlayheadMarker();
+  if (typeof updateClipMarkers === "function") updateClipMarkers();
+}
+
+function refreshTimelineView() {
+  if (typeof buildTimeline === "function") {
+      buildTimeline();
+      if (typeof updatePlayheadMarker === "function") updatePlayheadMarker();
+      if (typeof updateClipMarkers === "function") updateClipMarkers();
+      return;
+  }
+  if (typeof renderTimeline === "function") {
+      renderTimeline();
+  }
+}
+
 function insertFrame(frameIndex) {
   beginGlobalHistoryStep();
   for (let i = totalFrames - 1; i >= frameIndex; i--) {
       const src = getFrameCanvas(LAYER.LINE, i, null);
       if (src) {
-          const ctx = getFrameCanvas(LAYER.LINE, i + 1, null);
-          if (ctx) {
-              ctx.clearRect(0, 0, contentW, contentH);
-              ctx.drawImage(src, 0, 0);
+          const dst = getFrameCanvas(LAYER.LINE, i + 1, null);
+          const dctx = dst?.getContext?.("2d");
+          if (dctx) {
+              dctx.clearRect(0, 0, contentW, contentH);
+              dctx.drawImage(src, 0, 0);
           }
       }
   }
   totalFrames++;
   markProjectDirty();
-  renderTimeline();
+  refreshTimelineView();
   commitGlobalHistoryStep();
 }
 function deleteFrame(frameIndex) {
@@ -354,10 +383,11 @@ function deleteFrame(frameIndex) {
   for (let i = frameIndex; i < totalFrames - 1; i++) {
       const src = getFrameCanvas(LAYER.LINE, i + 1, null);
       if (src) {
-          const ctx = getFrameCanvas(LAYER.LINE, i, null);
-          if (ctx) {
-              ctx.clearRect(0, 0, contentW, contentH);
-              ctx.drawImage(src, 0, 0);
+          const dst = getFrameCanvas(LAYER.LINE, i, null);
+          const dctx = dst?.getContext?.("2d");
+          if (dctx) {
+              dctx.clearRect(0, 0, contentW, contentH);
+              dctx.drawImage(src, 0, 0);
           }
       }
   }
@@ -369,7 +399,7 @@ function deleteFrame(frameIndex) {
   totalFrames--;
   if (currentFrame >= totalFrames) currentFrame = totalFrames - 1;
   markProjectDirty();
-  renderTimeline();
+  refreshTimelineView();
   commitGlobalHistoryStep();
 }
 function _wireLayerQoL() {
@@ -580,7 +610,6 @@ function _wireExtraKeyboardShortcuts() {
       }, true);
   }
 }
-
 function flipSelection(horizontal) {
     if (!rectSelection.active) return;
     const c = getFrameCanvas(rectSelection.L, rectSelection.F, rectSelection.key);
@@ -793,6 +822,11 @@ function onWindowKeyDown(e) {
         }
     }
     if (e.key === "Escape") {
+        if (document.body.classList.contains("guide-place-mode") && window.__celstompSetGuidePlacementMode) {
+            e.preventDefault();
+            window.__celstompSetGuidePlacementMode(null);
+            return;
+        }
         if (tool === "lasso-fill" && lassoActive) {
             e.preventDefault();
             cancelLasso();
@@ -853,6 +887,14 @@ function onWindowKeyDown(e) {
             }
         }
     }
+    const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : "";
+    const typingNow = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target && e.target.isContentEditable;
+    const textEditorOpen = document.body.classList.contains("canvasTextEntryMode");
+
+    if ((typingNow || textEditorOpen) && e.key === " ") {
+        return;
+    }
+
     if (ctrl && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();

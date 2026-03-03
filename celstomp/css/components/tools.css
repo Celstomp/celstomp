@@ -48,35 +48,6 @@
   z-index: 8;
 }
 
-#tools,
-#toolsRight {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.22) rgba(0,0,0,0.2);
-}
-
-#tools::-webkit-scrollbar,
-#toolsRight::-webkit-scrollbar {
-  width: 10px;
-}
-
-#tools::-webkit-scrollbar-track,
-#toolsRight::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.22);
-  border-radius: 999px;
-}
-
-#tools::-webkit-scrollbar-thumb,
-#toolsRight::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.22);
-  border-radius: 999px;
-  border: 2px solid rgba(0,0,0,0.2);
-}
-
-#tools::-webkit-scrollbar-thumb:hover,
-#toolsRight::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.3);
-}
-
 /* Collapsed states */
 .app.tl-collapsed #tools,
 .app.tl-collapsed #toolsRight{
@@ -100,8 +71,7 @@
 
 .app.sidebar-collapsed #showLeftEdge{ display:block; }
 .app.rightbar-collapsed #showRightEdge{ display:block; }
-.app.tl-collapsed #showTimelineEdge,
-body.tl-collapsed #showTimelineEdge{ display:block; }
+.app.tl-collapsed #showTimelineEdge{ display:block; }
 
 
 /* Island Tools Context */
@@ -170,21 +140,6 @@ body.tl-collapsed #showTimelineEdge{ display:block; }
 
 #islandToolsSlot #toolSeg > label:has(svg)::before {
   display: none;
-}
-
-body.guide-place-mode #stage,
-body.guide-place-mode #drawCanvas {
-  cursor: crosshair !important;
-}
-
-body.guide-place-h #stage,
-body.guide-place-h #drawCanvas {
-  cursor: ns-resize !important;
-}
-
-body.guide-place-v #stage,
-body.guide-place-v #drawCanvas {
-  cursor: ew-resize !important;
 }
 
 #islandToolsSlot #toolSeg > label::before{

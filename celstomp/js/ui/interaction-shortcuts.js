@@ -672,13 +672,12 @@ function wireKeyboardShortcuts() {
       2: "eraser",
       3: "line",
       4: "rect",
-      5: "text",
-      6: "fill-brush",
-      7: "fill-eraser",
-      8: "lasso-fill",
-      9: "lasso-erase",
-      0: "rect-select",
-      "-": "eyedropper"
+      5: "fill-brush",
+      6: "fill-eraser",
+      7: "lasso-fill",
+      8: "lasso-erase",
+      9: "rect-select",
+      0: "eyedropper"
   };
   document.addEventListener("keydown", e => {
       if (e.defaultPrevented) return;
@@ -779,32 +778,25 @@ function onWindowKeyDown(e) {
                 if (isDigit(5)) {
                     e.preventDefault();
                     pickTool({
-                        id: "tool-text",
-                        value: "text"
-                    });
-                }
-                if (isDigit(6)) {
-                    e.preventDefault();
-                    pickTool({
                         id: "tool-fillbrush",
                         value: "fill-brush"
                     });
                 }
-                if (isDigit(7)) {
+                if (isDigit(6)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-filleraser",
                         value: "fill-eraser"
                     });
                 }
-                if (isDigit(8)) {
+                if (isDigit(7)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-lassoFill",
                         value: "lasso-fill"
                     });
                 }
-                if (isDigit(9)) {
+                if (isDigit(8)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-lassoErase",
@@ -812,11 +804,18 @@ function onWindowKeyDown(e) {
                         value: "lasso-erase"
                     });
                 }
-                if (isDigit(0)) {
+                if (isDigit(9)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-rectSelect",
                         value: "rect-select"
+                    });
+                }
+                if (isDigit(0)) {
+                    e.preventDefault();
+                    pickTool({
+                        id: "tool-eyedropper",
+                        value: "eyedropper"
                     });
                 }
             }
@@ -846,17 +845,6 @@ function onWindowKeyDown(e) {
         if (tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
             e.preventDefault();
             flipSelection(e.key.toLowerCase() === "h");
-            return;
-        }
-    }
-    if (e.key.toLowerCase() === "g") {
-        const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : "";
-        if (tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
-            e.preventDefault();
-            gridEnabled = !gridEnabled;
-            const gridBtn = $("tlGridBtn");
-            if (gridBtn) gridBtn.classList.toggle("active", gridEnabled);
-            queueRenderAll();
             return;
         }
     }

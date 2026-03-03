@@ -7,13 +7,6 @@ document.getElementById('part-sidepanel').innerHTML = `
             <div id="toolSettingsTitle" class="sideSectionTitle">Brushes</div>
           </div>
 
-          <section class="toolFold" data-fold="brushes">
-            <button id="toolFoldBrushesBtn" class="toolFoldBtn" type="button" aria-expanded="true" aria-controls="toolFoldBrushesBody">Brushes</button>
-            <div id="toolFoldBrushesBody" class="toolFoldBody">
-              <div id="brushShapeSeg" class="brushShapeSeg" role="radiogroup" aria-label="Brush shape selector"></div>
-            </div>
-          </section>
-
           <section class="toolFold" data-fold="settings">
             <button id="toolFoldSettingsBtn" class="toolFoldBtn" type="button" aria-expanded="true" aria-controls="toolFoldSettingsBody">Brush Settings</button>
             <div id="toolFoldSettingsBody" class="toolFoldBody">
@@ -40,8 +33,6 @@ document.getElementById('part-sidepanel').innerHTML = `
               </label>
             </div>
           </section>
-
-          <div id="brushShapeTooltip" class="brushShapeTooltip" hidden></div>
 
           <input id="eraserSize" type="hidden" value="100" />
         </section>

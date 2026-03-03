@@ -16,6 +16,7 @@ let textEntryX = 0;
 let textEntryY = 0;
 let textEntryEditId = null;
 let textEntryNextId = 1;
+let eraseStrokeBounds = null;
 
 let trailPoints = [];
 let rectToolStart = null;
@@ -285,6 +286,7 @@ function startStroke(e) {
       }
       return;
   }
+  resetEraseStrokeBounds();
   if (tool === "rect") {
       isDrawing = true;
       const hex = colorToHex(currentColor);
@@ -415,6 +417,7 @@ function startStroke(e) {
       const eraserRenderSettings = mergeBrushSettings(eraserSettings, {
           size: eraserSize * eraserTilt
       });
+      extendEraseStrokeBounds(x, y, x + .01, y + .01, eraserRenderSettings?.size || eraserSize * eraserTilt);
       stampLine(ctx, x, y, x + .01, y + .01, eraserRenderSettings, "#ffffff", 1, "destination-out");
   }
   markFrameHasContent(activeLayer, currentFrame, strokeHex || hex);
@@ -425,6 +428,32 @@ function startStroke(e) {
 function markFrameHasContent(L, F, colorStr) {
     const c = getFrameCanvas(L, F, colorStr);
     if (c) c._hasContent = true;
+}
+
+function resetEraseStrokeBounds() {
+    eraseStrokeBounds = null;
+}
+
+function extendEraseStrokeBounds(x0, y0, x1, y1, brushSpan) {
+    const span = Math.max(1, Number(brushSpan) || eraserSize || 1);
+    const pad = Math.max(2, span / 2 + 2);
+    const minX = Math.min(x0, x1) - pad;
+    const minY = Math.min(y0, y1) - pad;
+    const maxX = Math.max(x0, x1) + pad;
+    const maxY = Math.max(y0, y1) + pad;
+    if (!eraseStrokeBounds) {
+        eraseStrokeBounds = {
+            minX,
+            minY,
+            maxX,
+            maxY
+        };
+        return;
+    }
+    eraseStrokeBounds.minX = Math.min(eraseStrokeBounds.minX, minX);
+    eraseStrokeBounds.minY = Math.min(eraseStrokeBounds.minY, minY);
+    eraseStrokeBounds.maxX = Math.max(eraseStrokeBounds.maxX, maxX);
+    eraseStrokeBounds.maxY = Math.max(eraseStrokeBounds.maxY, maxY);
 }
 
 function continueStroke(e) {
@@ -502,6 +531,7 @@ function continueStroke(e) {
       const eraserRenderSettings = mergeBrushSettings(eraserSettings, {
           size: eraserSize * eraserTilt
       });
+      extendEraseStrokeBounds(lastPt.x, lastPt.y, x, y, eraserRenderSettings?.size || eraserSize * eraserTilt);
       stampLine(ctx, lastPt.x, lastPt.y, x, y, eraserRenderSettings, "#ffffff", 1, "destination-out");
   }
   lastPt = {
@@ -595,14 +625,16 @@ function endStroke() {
       return;
   }
   if (tool === "eraser" && activeLayer !== PAPER_LAYER) {
-      recomputeHasContent(activeLayer, currentFrame, endKey || activeSubColor?.[activeLayer] || currentColor);
-      if (tool === "eraser" && activeLayer !== PAPER_LAYER) {
-          recomputeHasContent(activeLayer, currentFrame, endKey || activeSubColor?.[activeLayer] || currentColor);
-          updateTimelineHasContent(currentFrame);
-          pruneUnusedSublayers(activeLayer);
+      const eraseKey = resolveKeyFor(activeLayer, endKey || activeSubColor?.[activeLayer] || currentColor);
+      if (eraseStrokeBounds && eraseKey && typeof removeTextEntriesIntersectingRect === "function") {
+          const b = eraseStrokeBounds;
+          removeTextEntriesIntersectingRect(activeLayer, currentFrame, eraseKey, b.minX, b.minY, b.maxX - b.minX, b.maxY - b.minY);
       }
+      if (eraseKey) recomputeHasContent(activeLayer, currentFrame, eraseKey);
       updateTimelineHasContent(currentFrame);
+      pruneUnusedSublayers(activeLayer);
   }
+  resetEraseStrokeBounds();
   if (tool === "fill-brush") {
       const seeds = trailPoints.length ? trailPoints : lastPt ? [ lastPt ] : [];
       if (seeds.length) applyFillRegionsFromSeeds(currentFrame, seeds, activeLayer);
@@ -662,6 +694,9 @@ function endStrokeMobileSafe(e) {
       try {
           _fillEraseAllLayers = false;
       } catch {}
+      try {
+          resetEraseStrokeBounds();
+      } catch {}
       return;
   }
   const F = typeof currentFrame === "number" ? currentFrame : 0;
@@ -686,6 +721,9 @@ function endStrokeMobileSafe(e) {
       try {
           stabilizedPt = null;
       } catch {}
+      try {
+          resetEraseStrokeBounds();
+      } catch {}
       return;
   }
   if (tool === "rect-select") {
@@ -700,6 +738,9 @@ function endStrokeMobileSafe(e) {
       } catch {}
       try {
           stabilizedPt = null;
+      } catch {}
+      try {
+          resetEraseStrokeBounds();
       } catch {}
       return;
   }
@@ -726,6 +767,9 @@ function endStrokeMobileSafe(e) {
       _fillEraseAllLayers = false;
       isDrawing = false;
       try {
+          resetEraseStrokeBounds();
+      } catch {}
+      try {
           endGlobalHistoryStep?.();
       } catch {}
       return;
@@ -744,6 +788,9 @@ function endStrokeMobileSafe(e) {
   } catch {}
   try {
       _fillEraseAllLayers = false;
+  } catch {}
+  try {
+      resetEraseStrokeBounds();
   } catch {}
   try {
     queueClearFx?.();
@@ -1301,6 +1348,7 @@ function eraseFillRegionsFromSeeds(a, b, c, d) {
                 continue;
             }
             const dpx = img.data;
+            let erasedPixels = null;
             let undoPushed = false;
             const ensureUndoOnce = () => {
                 if (undoPushed) return;
@@ -1326,6 +1374,8 @@ function eraseFillRegionsFromSeeds(a, b, c, d) {
                     if (dpx[a4]) {
                         ensureUndoOnce();
                         dpx[a4] = 0;
+                        if (!erasedPixels) erasedPixels = new Uint8Array(w * h);
+                        erasedPixels[idx] = 1;
                         anyHere = true;
                     }
                     if (x + 1 < w) {
@@ -1373,14 +1423,10 @@ function eraseFillRegionsFromSeeds(a, b, c, d) {
             }
             if (!any) continue;
             ctx.putImageData(img, 0, 0);
-            let anyAlpha = false;
-            for (let i = 3; i < dpx.length; i += 4) {
-                if (dpx[i]) {
-                    anyAlpha = true;
-                    break;
-                }
+            if (erasedPixels && typeof removeTextEntriesIntersectingPixelMask === "function") {
+                removeTextEntriesIntersectingPixelMask(L, F, key, erasedPixels, w, h);
             }
-            canvas._hasContent = anyAlpha;
+            canvas._hasContent = recomputeHasContent(L, F, key);
             didAny = true;
         }
         if (didAny) {
@@ -1718,7 +1764,7 @@ function renderTextEntryToCanvas(ctx, entry) {
         ctx.lineJoin = "round";
         ctx.miterLimit = 2;
         ctx.lineWidth = Math.max(1, Number(entry.strokeWidth) || 2);
-        ctx.strokeStyle = entry.strokeColor || "#000000";
+        ctx.strokeStyle = entry.strokeColor || entry.fillColor || "#000000";
     }
     const lines = String(entry.text || "").split("\n");
     const lineHeight = Math.max(1, Number(entry.lineHeight) || Math.max(8, Number(entry.fontSize) || 32) * 1.2);
@@ -1729,6 +1775,102 @@ function renderTextEntryToCanvas(ctx, entry) {
         lineY += lineHeight;
     }
     ctx.restore();
+}
+
+function removeTextEntriesMatching(layerIndex, frameIndex, key, matchBounds) {
+    const canvas = getFrameCanvas(layerIndex, frameIndex, key);
+    if (!canvas) return false;
+    const entries = ensureTextEntries(canvas);
+    if (!entries.length) return false;
+    const ctx = canvas.getContext("2d", {
+        willReadFrequently: true
+    });
+    if (!ctx) return false;
+
+    const removed = new Set;
+    const kept = [];
+    for (const entry of entries) {
+        const bounds = entry.bounds || measureTextEntryBounds(ctx, entry);
+        entry.bounds = bounds;
+        if (matchBounds(bounds, entry)) {
+            removed.add(entry);
+        } else {
+            kept.push(entry);
+        }
+    }
+    if (!removed.size) return false;
+
+    for (let i = entries.length - 1; i >= 0; i--) {
+        const entry = entries[i];
+        if (!removed.has(entry)) continue;
+        restoreTextEntryBase(ctx, entry);
+    }
+
+    entries.length = 0;
+    for (const entry of kept) entries.push(entry);
+    for (const entry of entries) {
+        renderTextEntryToCanvas(ctx, entry);
+        entry.bounds = measureTextEntryBounds(ctx, entry);
+    }
+
+    return true;
+}
+
+function removeTextEntriesIntersectingRect(layerIndex, frameIndex, key, x, y, w, h) {
+    const minX = Math.min(x, x + w);
+    const minY = Math.min(y, y + h);
+    const maxX = Math.max(x, x + w);
+    const maxY = Math.max(y, y + h);
+    return removeTextEntriesMatching(layerIndex, frameIndex, key, bounds => {
+        return !(bounds.maxX < minX || bounds.minX > maxX || bounds.maxY < minY || bounds.minY > maxY);
+    });
+}
+
+function removeTextEntriesIntersectingMask(layerIndex, frameIndex, key, maskCanvas) {
+    if (!maskCanvas) return false;
+    const maskW = maskCanvas.width | 0;
+    const maskH = maskCanvas.height | 0;
+    if (!maskW || !maskH) return false;
+    const maskCtx = maskCanvas.getContext("2d", {
+        willReadFrequently: true
+    });
+    if (!maskCtx) return false;
+    let maskData;
+    try {
+        maskData = maskCtx.getImageData(0, 0, maskW, maskH).data;
+    } catch {
+        return false;
+    }
+    return removeTextEntriesMatching(layerIndex, frameIndex, key, bounds => {
+        const x0 = Math.max(0, Math.floor(bounds.minX));
+        const y0 = Math.max(0, Math.floor(bounds.minY));
+        const x1 = Math.min(maskW, Math.ceil(bounds.maxX));
+        const y1 = Math.min(maskH, Math.ceil(bounds.maxY));
+        if (x0 >= x1 || y0 >= y1) return false;
+        for (let py = y0; py < y1; py++) {
+            for (let px = x0; px < x1; px++) {
+                if (maskData[(py * maskW + px) * 4 + 3] > 0) return true;
+            }
+        }
+        return false;
+    });
+}
+
+function removeTextEntriesIntersectingPixelMask(layerIndex, frameIndex, key, pixelMask, maskW, maskH) {
+    if (!pixelMask || !maskW || !maskH) return false;
+    return removeTextEntriesMatching(layerIndex, frameIndex, key, bounds => {
+        const x0 = Math.max(0, Math.floor(bounds.minX));
+        const y0 = Math.max(0, Math.floor(bounds.minY));
+        const x1 = Math.min(maskW, Math.ceil(bounds.maxX));
+        const y1 = Math.min(maskH, Math.ceil(bounds.maxY));
+        if (x0 >= x1 || y0 >= y1) return false;
+        for (let py = y0; py < y1; py++) {
+            for (let px = x0; px < x1; px++) {
+                if (pixelMask[py * maskW + px]) return true;
+            }
+        }
+        return false;
+    });
 }
 
 function findTextEntryAtPoint(layerIndex, frameIndex, x, y) {
@@ -1875,6 +2017,7 @@ function applyTextEntry() {
     if (!input) return;
 
     const text = String(input.value || "").replace(/\r/g, "");
+    const fillHex = colorToHex(currentColor);
     const options = {
         text,
         fontSize: Math.max(8, Math.min(200, parseInt(sizeInput?.value || "32", 10) || 32)),
@@ -1884,8 +2027,8 @@ function applyTextEntry() {
         italic: !!italicCheck?.checked,
         strokeEnabled: !!strokeCheck?.checked,
         strokeWidth: Math.max(1, Math.min(16, parseInt(strokeWidthInput?.value || "2", 10) || 2)),
-        fillColor: colorToHex(currentColor),
-        strokeColor: "#000000"
+        fillColor: fillHex,
+        strokeColor: fillHex
     };
 
     const editTarget = textEntryEditId ? findTextEntryById(activeLayer, currentFrame, textEntryEditId) : null;

@@ -840,6 +840,9 @@ function onWindowKeyDown(e) {
             });
             if (ctx) {
                 beginGlobalHistoryStep(rectSelection.L, rectSelection.F, rectSelection.key);
+                if (typeof removeTextEntriesIntersectingRect === "function") {
+                    removeTextEntriesIntersectingRect(rectSelection.L, rectSelection.F, rectSelection.key, rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
+                }
                 ctx.clearRect(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
                 markGlobalHistoryDirty();
                 recomputeHasContent(rectSelection.L, rectSelection.F, rectSelection.key);

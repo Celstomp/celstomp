@@ -8,139 +8,76 @@ document.getElementById('part-timeline').innerHTML = `
         aria-expanded="false">▴</button>
 
 
-      <div class="left">
+      <div class="left tl-group">
         <strong>Timeline</strong>
         <span class="badge" id="timeCounter">0s+0f</span>
         <span class="badge">Loop <input id="loopToggle" type="checkbox" checked
             style="vertical-align:middle; margin-left:6px;" /></span>
-        <button id="insertFrameBtn" class="miniBtn" title="Insert Frame">+</button>
-        <button id="deleteFrameBtn" class="miniBtn danger" title="Delete Frame">−</button>
-        <input id="gotoFrameInput" type="number" min="1" class="gotoFrameInput" placeholder="Frame #"
-            title="Jump to frame" />
-        <button id="gotoFrameBtn" class="miniBtn">Go</button>
+        <div class="tl-btn-group">
+          <button id="insertFrameBtn" class="tl-icon-btn" title="Insert Frame">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <button id="deleteFrameBtn" class="tl-icon-btn danger" title="Delete Frame">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <input id="gotoFrameInput" type="number" min="1" class="tl-num-input" placeholder="#" title="Jump to frame" />
+        <button id="gotoFrameBtn" class="tl-icon-btn" title="Go to frame">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
 
 
-      <div class="center" id="tlHeaderCenter">
-        <button id="tlPrevCel" class="tl-play-btn" title="Previous Cel">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-        </button>
-        <button id="tlPrevFrame" class="tl-play-btn" title="Previous Frame">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-        </button>
-        <button id="tlPlayToggle" class="tl-play-btn tl-play-main" title="Play/Pause">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="play-icon"><path d="M8 5v14l11-7z"/></svg>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="pause-icon" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-        </button>
-        <button id="tlNextFrame" class="tl-play-btn" title="Next Frame">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-        </button>
-        <button id="tlNextCel" class="tl-play-btn" title="Next Cel">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-        </button>
+      <div class="center tl-group" id="tlHeaderCenter">
+        <div class="tl-btn-group">
+          <button id="tlPrevCel" class="tl-icon-btn" title="Previous Cel">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button id="tlPrevFrame" class="tl-icon-btn" title="Previous Frame">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button id="tlPlayToggle" class="tl-icon-btn tl-play-btn" title="Play/Pause">
+            <svg class="play-icon" viewBox="0 0 24 24" width="18" height="18"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+            <svg class="pause-icon" viewBox="0 0 24 24" width="18" height="18" style="display:none"><path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor"/></svg>
+          </button>
+          <button id="tlNextFrame" class="tl-icon-btn" title="Next Frame">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button id="tlNextCel" class="tl-icon-btn" title="Next Cel">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M13 17l5-5-5-5M6 17l5-5-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
       </div>
 
-      <div class="right">
-
-        <div class="tl-group">
-          <label><input id="tlOnion" type="checkbox" /> Onion</label>
-          <button id="tlDupCel">Duplicate</button>
-        </div>
-
-        <div class="tl-group tl-group-tools">
-          <button id="tlGridBtn" class="tl-tool-btn" title="Toggle Grid (G)">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <rect x="1" y="1" width="5" height="5" fill="none" stroke="currentColor" stroke-width="1"/>
-              <rect x="10" y="1" width="5" height="5" fill="none" stroke="currentColor" stroke-width="1"/>
-              <rect x="1" y="10" width="5" height="5" fill="none" stroke="currentColor" stroke-width="1"/>
-              <rect x="10" y="10" width="5" height="5" fill="none" stroke="currentColor" stroke-width="1"/>
-            </svg>
-          </button>
-          <input id="tlGridSize" type="number" min="8" max="128" class="tl-num" value="32" title="Grid Size" style="width:50px;" />
-          <button id="tlGridSnapBtn" class="tl-tool-btn" title="Snap to Grid">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <line x1="8" y1="1" x2="8" y2="4" stroke="currentColor" stroke-width="1.5"/>
-              <line x1="8" y1="12" x2="8" y2="15" stroke="currentColor" stroke-width="1.5"/>
-              <line x1="1" y1="8" x2="4" y2="8" stroke="currentColor" stroke-width="1.5"/>
-              <line x1="12" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5"/>
-            </svg>
-          </button>
-          <button id="tlRulersBtn" class="tl-tool-btn" title="Toggle Rulers">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <line x1="2" y1="3" x2="14" y2="3" stroke="currentColor" stroke-width="1.5"/>
-              <line x1="2" y1="13" x2="14" y2="13" stroke="currentColor" stroke-width="1.5"/>
-              <line x1="3" y1="2" x2="3" y2="5" stroke="currentColor" stroke-width="1"/>
-              <line x1="3" y1="11" x2="3" y2="14" stroke="currentColor" stroke-width="1"/>
-            </svg>
-          </button>
-          <button id="tlGuideSnapBtn" class="tl-tool-btn" title="Snap to Guides">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <line x1="8" y1="1" x2="8" y2="6" stroke="currentColor" stroke-width="2"/>
-              <line x1="8" y1="10" x2="8" y2="15" stroke="currentColor" stroke-width="2"/>
-              <line x1="1" y1="8" x2="6" y2="8" stroke="currentColor" stroke-width="2"/>
-              <line x1="10" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="2"/>
-            </svg>
+      <div class="right tl-group">
+        <div class="tl-btn-group">
+          <label class="tl-chip"><input id="tlOnion" type="checkbox" /> Onion</label>
+          <button id="tlDupCel" class="tl-icon-btn" title="Duplicate Cel">
+            <svg viewBox="0 0 24 24" width="16" height="16"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 16V6a2 2 0 012-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           </button>
         </div>
 
-        <div class="tl-group tl-group-guide">
-          <button id="addHGuideBtn" class="tl-tool-btn tl-guide-btn" title="Add Horizontal Guide - click on canvas">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="2"/>
-              <line x1="8" y1="3" x2="8" y2="13" stroke="currentColor" stroke-width="1" opacity="0.6"/>
-              <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
-            </svg>
-          </button>
-          <button id="addVGuideBtn" class="tl-tool-btn tl-guide-btn" title="Add Vertical Guide - click on canvas">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" stroke-width="2"/>
-              <line x1="3" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1" opacity="0.6"/>
-              <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
-            </svg>
-          </button>
-          <button id="clearGuidesBtn" class="tl-tool-btn" title="Clear All Guides">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" stroke-width="2"/>
-              <line x1="13" y1="3" x2="3" y2="13" stroke="currentColor" stroke-width="2"/>
-            </svg>
-          </button>
-          <span id="guideModeHint" class="tl-guide-hint" hidden>Click Canvas To Place Guide</span>
+        <div class="tl-btn-group tl-opts-group">
+          <label class="tl-chip"><span>Snap</span><input id="tlSnap" type="number" min="1" class="tl-num-input-sm" /></label>
+          <label class="tl-chip"><input id="tlPlaySnapped" type="checkbox" /> Snapped</label>
         </div>
 
-        <div class="tl-group">
-          <label for="tlSeconds">Sec</label>
-          <input id="tlSeconds" type="number" min="1" class="tl-num" />
-
-          <label for="tlFps">FPS</label>
-          <input id="tlFps" type="number" min="1" class="tl-num" />
-          
-          <label for="tlSnap">Snap</label>
-          <input id="tlSnap" type="number" min="1" class="tl-num" style="width:40px;" />
+        <div class="tl-btn-group tl-opts-group">
+          <label class="tl-chip"><span>Sec</span><input id="tlSeconds" type="number" min="1" class="tl-num-input-sm" /></label>
+          <label class="tl-chip"><span>FPS</span><input id="tlFps" type="number" min="1" class="tl-num-input-sm" /></label>
         </div>
 
-        <button id="zoomTimelineOut" class="tl-tool-btn" title="Zoom Out" aria-label="Zoom Out">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/>
-            <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="4.8" y1="7" x2="9.2" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <span class="timelineZoom">Zoom</span>
-        <button id="zoomTimelineIn" class="tl-tool-btn" title="Zoom In" aria-label="Zoom In">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/>
-            <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="4.8" y1="7" x2="9.2" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="7" y1="4.8" x2="7" y2="9.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
+        <div class="tl-btn-group">
+          <button id="zoomTimelineOut" class="tl-icon-btn" title="Zoom Out">
+            <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 11h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <button id="zoomTimelineIn" class="tl-icon-btn" title="Zoom In">
+            <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 11h6M11 8v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
 
-        <button id="hideTimelineBtn" class="tl-tool-btn" title="Hide Timeline" aria-label="Hide Timeline" onclick="document.body.classList.add('tl-collapsed');var t=document.getElementById('timeline');if(t){t.hidden=true;t.style.display='none';}var s=document.getElementById('showTimelineEdge');if(s){s.style.display='block';}window.dispatchEvent(new Event('resize'))">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <line x1="3" y1="4" x2="13" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <polyline points="5,7 8,10 11,7" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+        <button id="hideTimelineBtn" class="tl-icon-btn" title="Hide Timeline" onclick="document.body.classList.add('tl-collapsed');var t=document.getElementById('timeline');if(t){t.hidden=true;t.style.display='none';}var s=document.getElementById('showTimelineEdge');if(s){s.style.display='block';}window.dispatchEvent(new Event('resize'))">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
       </div>
     </div>

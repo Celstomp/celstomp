@@ -351,3 +351,113 @@
 #islandSidePanel #clearAllBtn.danger:hover{
   background: rgba(255,107,107,0.10);
 }
+
+/* Right-docked island styles */
+.islandDock.right-docked {
+  left: auto !important;
+  right: 0;
+  top: var(--header-h) !important;
+  width: 280px;
+  height: calc(100vh - var(--header-h) - var(--timeline-h)) !important;
+  max-height: calc(100vh - var(--header-h) - var(--timeline-h));
+  border-radius: 0;
+  border-right: none;
+  border-top: none;
+}
+
+.islandDock.right-docked .islandResizeHandle {
+  display: none !important;
+}
+
+.islandDock.right-docked #islandSidePanel {
+  display: none !important;
+}
+
+/* Drop zone indicator */
+.island-drop-zone {
+  position: fixed;
+  right: 0;
+  top: var(--header-h);
+  width: 60px;
+  height: calc(100vh - var(--header-h) - var(--timeline-h));
+  background: rgba(0, 229, 255, 0.1);
+  border: 2px dashed rgba(0, 229, 255, 0.5);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 35;
+}
+
+.island-drop-zone.visible {
+  opacity: 1;
+}
+
+/* Lock hint */
+.island-lock-hint {
+  position: fixed;
+  right: 70px;
+  top: calc(var(--header-h) + 50%);
+  transform: translateY(-50%);
+  background: rgba(0, 229, 255, 0.18);
+  border: 1px solid rgba(0, 229, 255, 0.5);
+  color: #9fd5ff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 36;
+}
+
+.island-lock-hint.visible {
+  opacity: 1;
+}
+
+/* Custom scrollbar for layers */
+#islandLayersSlot {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.22) rgba(0,0,0,0.18);
+}
+
+#islandLayersSlot::-webkit-scrollbar {
+  width: 8px;
+}
+
+#islandLayersSlot::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.18);
+  border-radius: 4px;
+}
+
+#islandLayersSlot::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.20);
+  border-radius: 4px;
+}
+
+#islandLayersSlot::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.30);
+}
+
+/* Custom scrollbar for side panel */
+.islandSideBody {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.22) rgba(0,0,0,0.18);
+}
+
+.islandSideBody::-webkit-scrollbar {
+  width: 8px;
+}
+
+.islandSideBody::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.18);
+  border-radius: 4px;
+}
+
+.islandSideBody::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.20);
+  border-radius: 4px;
+}
+
+.islandSideBody::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.30);
+}

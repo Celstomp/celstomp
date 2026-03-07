@@ -294,6 +294,7 @@ function startStroke(e) {
       activeSubColor[activeLayer] = strokeHex;
       ensureSublayer(activeLayer, strokeHex);
       renderLayerSwatches(activeLayer);
+      invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, strokeHex);
       beginGlobalHistoryStep(activeLayer, currentFrame, strokeHex);
       rectToolStart = { x, y };
       rectToolPreview = { x, y };
@@ -305,6 +306,10 @@ function startStroke(e) {
       return;
   }
   if (tool === "lasso-fill") {
+      if (activeLayer !== PAPER_LAYER) {
+          const lassoFillKey = colorToHex(currentColor);
+          invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, lassoFillKey);
+      }
       lassoActive = true;
       isDrawing = true;
       lassoPts = [];
@@ -321,6 +326,8 @@ function startStroke(e) {
   } catch {}
   if (tool === "lasso-erase") {
       if (activeLayer === PAPER_LAYER) return;
+      const lassoEraseKey = resolveKeyFor(activeLayer, activeSubColor?.[activeLayer] ?? currentColor);
+      if (lassoEraseKey) invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, lassoEraseKey);
       lassoActive = true;
       isDrawing = true;
       lassoPts = [];
@@ -352,6 +359,7 @@ function startStroke(e) {
       if (tool === "fill-brush" && !key) return;
       if (tool === "fill-eraser") key = key || null;
       if (tool === "fill-brush") ensureActiveSwatchForColorLayer(activeLayer, key);
+      if (key) invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, key);
       if (tool === "fill-brush") pushUndo(activeLayer, currentFrame, key);
       isDrawing = true;
       if (tool === "fill-eraser") _fillEraseAllLayers = !!e.shiftKey;
@@ -378,6 +386,7 @@ function startStroke(e) {
       activeSubColor[activeLayer] = strokeHex;
       ensureSublayer(activeLayer, strokeHex);
       renderLayerSwatches(activeLayer);
+      invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, strokeHex);
       beginGlobalHistoryStep(activeLayer, currentFrame, strokeHex);
       lineToolStart = { x, y };
       lineToolPreview = { x, y };
@@ -392,6 +401,7 @@ function startStroke(e) {
   activeSubColor[activeLayer] = strokeHex;
   ensureSublayer(activeLayer, strokeHex);
   renderLayerSwatches(activeLayer);
+  invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, strokeHex);
   beginGlobalHistoryStep(activeLayer, currentFrame, strokeHex);
   pushUndo(activeLayer, currentFrame, strokeHex);
   lastPt = {
@@ -1016,6 +1026,7 @@ function beginRectSelect(e) {
         const inY = pt.y >= rectSelection.y && pt.y <= rectSelection.y + rectSelection.h;
         const sameTarget = rectSelection.L === activeLayer && rectSelection.F === currentFrame && rectSelection.key === key;
         if (inX && inY && sameTarget) {
+            invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, key);
             const c = getFrameCanvas(activeLayer, currentFrame, key);
             const ctx = c.getContext("2d", {
                 willReadFrequently: true
@@ -1661,6 +1672,18 @@ function ensureTextEntries(canvas) {
     if (!canvas) return [];
     if (!Array.isArray(canvas._textEntries)) canvas._textEntries = [];
     return canvas._textEntries;
+}
+
+function invalidateEditableTextEntriesForCanvas(layerIndex, frameIndex, key) {
+    if (layerIndex === PAPER_LAYER) return false;
+    const resolvedKey = resolveKeyFor(layerIndex, key);
+    if (!resolvedKey) return false;
+    const layer = layers?.[layerIndex];
+    const sub = layer?.sublayers?.get?.(resolvedKey);
+    const canvas = sub?.frames?.[frameIndex];
+    if (!canvas || !Array.isArray(canvas._textEntries) || !canvas._textEntries.length) return false;
+    canvas._textEntries.length = 0;
+    return true;
 }
 
 function measureTextEntryBounds(ctx, entry) {

@@ -1787,31 +1787,21 @@ function removeTextEntriesMatching(layerIndex, frameIndex, key, matchBounds) {
     });
     if (!ctx) return false;
 
-    const removed = new Set;
+    let removedCount = 0;
     const kept = [];
     for (const entry of entries) {
         const bounds = entry.bounds || measureTextEntryBounds(ctx, entry);
         entry.bounds = bounds;
         if (matchBounds(bounds, entry)) {
-            removed.add(entry);
+            removedCount++;
         } else {
             kept.push(entry);
         }
     }
-    if (!removed.size) return false;
-
-    for (let i = entries.length - 1; i >= 0; i--) {
-        const entry = entries[i];
-        if (!removed.has(entry)) continue;
-        restoreTextEntryBase(ctx, entry);
-    }
+    if (!removedCount) return false;
 
     entries.length = 0;
     for (const entry of kept) entries.push(entry);
-    for (const entry of entries) {
-        renderTextEntryToCanvas(ctx, entry);
-        entry.bounds = measureTextEntryBounds(ctx, entry);
-    }
 
     return true;
 }

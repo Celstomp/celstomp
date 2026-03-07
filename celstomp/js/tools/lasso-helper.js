@@ -141,27 +141,18 @@ function applyLassoErase() {
     if (!ctx) return false;
     const w = off.width | 0, h = off.height | 0;
     const aaOn = getBrushAntiAliasEnabled();
-    if (aaOn) {
-        ctx.save();
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.fillStyle = "rgba(0,0,0,1)";
-        ctx.beginPath();
-        ctx.moveTo(lassoPts[0].x, lassoPts[0].y);
-        for (let i = 1; i < lassoPts.length; i++) ctx.lineTo(lassoPts[i].x, lassoPts[i].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-    } else {
-        let mctx;
-        [_lassoMaskC, mctx] = ensureTmpCanvas(_lassoMaskC, w, h);
-        mctx.save();
-        mctx.fillStyle = "#fff";
-        mctx.beginPath();
-        mctx.moveTo(lassoPts[0].x, lassoPts[0].y);
-        for (let i = 1; i < lassoPts.length; i++) mctx.lineTo(lassoPts[i].x, lassoPts[i].y);
-        mctx.closePath();
-        mctx.fill();
-        mctx.restore();
+    let mctx;
+    [_lassoMaskC, mctx] = ensureTmpCanvas(_lassoMaskC, w, h);
+    mctx.save();
+    mctx.fillStyle = "#fff";
+    mctx.beginPath();
+    mctx.moveTo(lassoPts[0].x, lassoPts[0].y);
+    for (let i = 1; i < lassoPts.length; i++) mctx.lineTo(lassoPts[i].x, lassoPts[i].y);
+    mctx.closePath();
+    mctx.fill();
+    mctx.restore();
+
+    if (!aaOn) {
         const img = mctx.getImageData(0, 0, w, h);
         const d = img.data;
         for (let i = 0; i < d.length; i += 4) {
@@ -172,11 +163,17 @@ function applyLassoErase() {
             d[i + 2] = 255;
         }
         mctx.putImageData(img, 0, 0);
-        ctx.save();
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.drawImage(_lassoMaskC, 0, 0);
-        ctx.restore();
     }
+
+    if (typeof removeTextEntriesIntersectingMask === "function") {
+        removeTextEntriesIntersectingMask(L, currentFrame, key, _lassoMaskC);
+    }
+
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.drawImage(_lassoMaskC, 0, 0);
+    ctx.restore();
+
     recomputeHasContent(L, currentFrame, key);
     queueRenderAll();
     updateTimelineHasContent(currentFrame);

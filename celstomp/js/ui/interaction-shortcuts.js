@@ -643,12 +643,14 @@ function wireKeyboardShortcuts() {
       2: "eraser",
       3: "line",
       4: "rect",
-      5: "fill-brush",
-      6: "fill-eraser",
-      7: "lasso-fill",
-      8: "lasso-erase",
-      9: "rect-select",
-      0: "eyedropper"
+      5: "text",
+      6: "fill-brush",
+      7: "fill-eraser",
+      8: "lasso-fill",
+      9: "lasso-erase",
+      0: "rect-select",
+      t: "text",
+      i: "eyedropper"
   };
   document.addEventListener("keydown", e => {
       if (e.defaultPrevented) return;
@@ -699,6 +701,7 @@ function onWindowKeyDown(e) {
         const typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target && e.target.isContentEditable;
         if (!typing && !ctrl && !e.altKey) {
             const isDigit = n => e.code === `Digit${n}` || e.code === `Numpad${n}` || e.key === String(n);
+            const keyLower = (e.key || "").toLowerCase();
             const pickTool = ({id: id, value: value, altIds: altIds = []}) => {
                 let inp = id && $(id) || null;
                 if (!inp) {
@@ -749,25 +752,32 @@ function onWindowKeyDown(e) {
                 if (isDigit(5)) {
                     e.preventDefault();
                     pickTool({
+                        id: "tool-text",
+                        value: "text"
+                    });
+                }
+                if (isDigit(6)) {
+                    e.preventDefault();
+                    pickTool({
                         id: "tool-fillbrush",
                         value: "fill-brush"
                     });
                 }
-                if (isDigit(6)) {
+                if (isDigit(7)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-filleraser",
                         value: "fill-eraser"
                     });
                 }
-                if (isDigit(7)) {
+                if (isDigit(8)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-lassoFill",
                         value: "lasso-fill"
                     });
                 }
-                if (isDigit(8)) {
+                if (isDigit(9)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-lassoErase",
@@ -775,14 +785,21 @@ function onWindowKeyDown(e) {
                         value: "lasso-erase"
                     });
                 }
-                if (isDigit(9)) {
+                if (isDigit(0)) {
                     e.preventDefault();
                     pickTool({
                         id: "tool-rectSelect",
                         value: "rect-select"
                     });
                 }
-                if (isDigit(0)) {
+                if (keyLower === "t") {
+                    e.preventDefault();
+                    pickTool({
+                        id: "tool-text",
+                        value: "text"
+                    });
+                }
+                if (keyLower === "i") {
                     e.preventDefault();
                     pickTool({
                         id: "tool-eyedropper",
@@ -823,6 +840,9 @@ function onWindowKeyDown(e) {
             });
             if (ctx) {
                 beginGlobalHistoryStep(rectSelection.L, rectSelection.F, rectSelection.key);
+                if (typeof removeTextEntriesIntersectingRect === "function") {
+                    removeTextEntriesIntersectingRect(rectSelection.L, rectSelection.F, rectSelection.key, rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
+                }
                 ctx.clearRect(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
                 markGlobalHistoryDirty();
                 recomputeHasContent(rectSelection.L, rectSelection.F, rectSelection.key);
@@ -860,6 +880,9 @@ function onWindowKeyDown(e) {
         e.preventDefault();
         redo();
     } else if (e.key === " ") {
+        const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : "";
+        const typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target && e.target.isContentEditable;
+        if (typing) return;
         e.preventDefault();
         if (isPlaying) pausePlayback(); else startPlayback();
     } else if (e.key === "ArrowUp") {

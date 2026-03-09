@@ -175,10 +175,50 @@ function wireFloatingIslandDrag() {
   if (!head) return;
   if (dock._dragWired) return;
   dock._dragWired = true;
+  const LOCK_KEY = "celstomp_island_right_locked";
+  const LOCK_THRESHOLD = 170;
+
+  let lockHint = $("islandLockHint");
+  if (!lockHint) {
+      lockHint = document.createElement("div");
+      lockHint.id = "islandLockHint";
+      lockHint.className = "islandLockHint";
+      lockHint.textContent = "Drop To Dock Right";
+      document.body.appendChild(lockHint);
+  }
+
+  function setRightLocked(v, opts = {}) {
+      const isLocked = !!v;
+      const persist = opts.persist !== false;
+      dock.classList.toggle("right-locked", isLocked);
+      if (isLocked) {
+          dock.style.left = "";
+          dock.style.top = "";
+          dock.style.right = "var(--dock-gap)";
+      } else {
+          dock.style.right = "";
+      }
+      if (persist) {
+          try {
+              localStorage.setItem(LOCK_KEY, isLocked ? "1" : "0");
+          } catch {}
+      }
+  }
+
+  try {
+      const saved = localStorage.getItem(LOCK_KEY);
+      if (saved === "1") {
+          setRightLocked(true, {
+              persist: false
+          });
+      }
+  } catch {}
+
   let dragging = false;
   let pid = null;
   let offX = 0;
   let offY = 0;
+  let lockCandidate = false;
   let cachedHeaderH = 48;
   let cachedVW = window.innerWidth;
   let cachedVH = window.innerHeight;
@@ -202,6 +242,15 @@ function wireFloatingIslandDrag() {
   head.addEventListener("pointerdown", e => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
       if (e.target.closest(".islandBtn, .islandBtns, .islandResizeHandle")) return;
+
+      if (dock.classList.contains("right-locked")) {
+          const rLocked = dock.getBoundingClientRect();
+          setRightLocked(false, {
+              persist: false
+          });
+          dock.style.left = Math.round(rLocked.left) + "px";
+          dock.style.top = Math.round(rLocked.top) + "px";
+      }
       
       updateCache();
       
@@ -223,6 +272,9 @@ function wireFloatingIslandDrag() {
       const pos = clampPos(e.clientX - offX, e.clientY - offY);
       dock.style.left = pos.x + "px";
       dock.style.top = pos.y + "px";
+      lockCandidate = e.clientX >= window.innerWidth - LOCK_THRESHOLD;
+      dock.classList.toggle("drag-lock-candidate", lockCandidate);
+      lockHint.classList.toggle("active", lockCandidate);
       e.preventDefault();
   }, {
       passive: false
@@ -231,10 +283,18 @@ function wireFloatingIslandDrag() {
       if (!dragging || pid != null && e.pointerId !== pid) return;
       dragging = false;
       dock.classList.remove("dragging");
+      dock.classList.remove("drag-lock-candidate");
+      lockHint.classList.remove("active");
       try {
           head.releasePointerCapture(pid);
       } catch {}
       pid = null;
+      if (lockCandidate) {
+          setRightLocked(true);
+      } else {
+          setRightLocked(false);
+      }
+      lockCandidate = false;
   };
 
   window.addEventListener("pointerup", end, {

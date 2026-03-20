@@ -754,7 +754,6 @@ function closeLayerRowMenu() {
 }
 
 const visBtnByLayer = new Map;
-const layerMoveCtrlsByLayer = new Map;
 function layerIsHidden(L) {
     if (L === PAPER_LAYER) return false;
     return (layers[L]?.opacity ?? 1) <= 0;
@@ -789,70 +788,6 @@ function applyLayerSegOrder() {
         seg.appendChild(row.label);
     }
 }
-function moveLayerInList(L, dir) {
-    if (L === PAPER_LAYER) return;
-    const ui = mainLayersTopToBottom();
-    const idx = ui.indexOf(L);
-    if (idx < 0) return;
-    const next = idx + dir;
-    if (next < 0 || next >= ui.length) return;
-    [ ui[idx], ui[next] ] = [ ui[next], ui[idx] ];
-    mainLayerOrder = normalizeMainLayerOrder(ui.slice().reverse());
-    applyLayerSegOrder();
-    wireLayerVisButtons();
-    queueRenderAll();
-
-    // TODO: this throws a wrench in things
-    // rearrange export logic st dirty logic precedes layer logic
-    // markProjectDirty();
-}
-function updateLayerMoveButtons() {
-    const ui = mainLayersTopToBottom();
-    for (let i = 0; i < ui.length; i++) {
-        const L = ui[i];
-        const refs = layerMoveCtrlsByLayer.get(L);
-        if (!refs) continue;
-        refs.up.disabled = i === 0;
-        refs.down.disabled = i === ui.length - 1;
-        refs.up.title = refs.up.disabled ? "Already at top" : "Move layer up";
-        refs.down.title = refs.down.disabled ? "Already at bottom" : "Move layer down";
-    }
-}
-function ensureLayerMoveControls(label, L) {
-    if (!label || L === PAPER_LAYER) return;
-    const existing = label.querySelector(".layerMoveControls");
-    if (existing) return;
-    const wrap = document.createElement("span");
-    wrap.className = "layerMoveControls";
-    const up = document.createElement("button");
-    up.type = "button";
-    up.className = "layerMoveBtn";
-    up.textContent = "▲";
-    up.setAttribute("aria-label", "Move layer up");
-    up.addEventListener("click", e => {
-        e.preventDefault();
-        e.stopPropagation();
-        moveLayerInList(L, -1);
-    });
-    const down = document.createElement("button");
-    down.type = "button";
-    down.className = "layerMoveBtn";
-    down.textContent = "▼";
-    down.setAttribute("aria-label", "Move layer down");
-    down.addEventListener("click", e => {
-        e.preventDefault();
-        e.stopPropagation();
-        moveLayerInList(L, 1);
-    });
-    wrap.appendChild(up);
-    wrap.appendChild(down);
-    const sw = label.querySelector(".layerSwatches");
-    if (sw) label.insertBefore(wrap, sw); else label.appendChild(wrap);
-    layerMoveCtrlsByLayer.set(L, {
-        up: up,
-        down: down
-    });
-}
 function injectVisBtn(radioId, L) {
     const input = $(radioId);
     if (!input) return;
@@ -861,7 +796,6 @@ function injectVisBtn(radioId, L) {
     const existing = label.querySelector(".visBtn");
     if (existing) {
         label.dataset.layerRow = String(L);
-        ensureLayerMoveControls(label, L);
         visBtnByLayer.set(L, existing);
         updateVisBtn(L);
         return;
@@ -880,7 +814,6 @@ function injectVisBtn(radioId, L) {
     });
     label.insertBefore(btn, label.firstChild);
     label.dataset.layerRow = String(L);
-    ensureLayerMoveControls(label, L);
     if (!label._opacityCtxWired) {
         label._opacityCtxWired = true;
         label.addEventListener("contextmenu", e => {
@@ -908,5 +841,4 @@ function wireLayerVisButtons() {
     updateVisBtn(LAYER.SHADE);
     updateVisBtn(LAYER.LINE);
     updateVisBtn(LAYER.SKETCH);
-    updateLayerMoveButtons();
 }

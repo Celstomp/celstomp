@@ -4,6 +4,9 @@
     const tools = [
         { id: 'tool-brush', val: 'brush', label: 'Brush', checked: true },
         { id: 'tool-eraser', val: 'eraser', label: 'Eraser' },
+        { id: 'tool-line', val: 'line', label: 'Line', icon: '<svg viewBox="0 0 24 24" width="18" height="18"><line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>' },
+        { id: 'tool-rect', val: 'rect', label: 'Rect', icon: '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>' },
+        { id: 'tool-text', val: 'text', label: 'Text', icon: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 7V4h16v3M9 20h6M12 4v16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' },
         { id: 'tool-fillbrush', val: 'fill-brush', label: 'Fill Brush' },
         { id: 'tool-filleraser', val: 'fill-eraser', label: 'Eraser Fill' },
         { id: 'tool-lassoFill', val: 'lasso-fill', label: 'Lasso Fill' },
@@ -27,7 +30,12 @@
             const lbl = document.createElement('label');
             lbl.htmlFor = t.id;
             lbl.dataset.tool = t.val;
-            lbl.textContent = t.label;
+            lbl.setAttribute('aria-label', t.label);
+            if (t.icon) {
+                lbl.innerHTML = t.icon;
+            } else {
+                lbl.textContent = t.label;
+            }
 
             if (t.val === 'brush') lbl.id = 'toolBrushLabel';
             if (t.val === 'eraser') lbl.id = 'toolEraserLabel';
@@ -36,40 +44,6 @@
             frag.appendChild(lbl);
         });
         toolContainer.replaceChildren(frag);
-    }
-
-    const brushes = [
-        { id: 'shape-circle', val: 'circle', label: 'Circle', checked: true },
-        { id: 'shape-square', val: 'square', label: 'Square' },
-        { id: 'shape-diamond', val: 'diamond', label: 'Diamond' },
-        { id: 'shape-oval-h', val: 'oval-h', label: 'Horizontal oval' },
-        { id: 'shape-oval-v', val: 'oval-v', label: 'Vertical oval' },
-        { id: 'shape-rect-h', val: 'rect-h', label: 'Rectangle horizontal' },
-        { id: 'shape-rect-v', val: 'rect-v', label: 'Rectangle vertical' },
-        { id: 'shape-triangle', val: 'triangle', label: 'Triangle' }
-    ];
-    const brushesContainer = document.getElementById('brushShapeSeg');
-    if (brushesContainer) {
-        const frag = document.createDocumentFragment();
-        brushes.forEach(t => {
-            const inp = document.createElement('input');
-            inp.type = 'radio';
-            inp.name = 'brushShape';
-            inp.id = t.id;
-            inp.value = t.val;
-            inp.dataset.brushShape = t.val;
-            if (t.checked) inp.checked = true;
-
-            const lbl = document.createElement('label');
-            lbl.htmlFor = t.id;
-            lbl.dataset.brushShape = t.val;
-            lbl.setAttribute('aria-label', t.label);
-            lbl.textContent = '';
-
-            frag.appendChild(inp);
-            frag.appendChild(lbl);
-        });
-        brushesContainer.replaceChildren(frag);
     }
 
     const layers = [

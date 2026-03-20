@@ -20,8 +20,18 @@ let guideHLines = [];
 let guideVLines = [];
 let guideMode = null;
 let guideModeHint = null;
+let textEntryActive = false;
+let textEntryX = 0;
+let textEntryY = 0;
+let textEntryEditId = null;
+let textEntryNextId = 1;
+let eraseStrokeBounds = null;
 
 let trailPoints = [];
+let rectToolStart = null;
+let rectToolPreview = null;
+let lineToolStart = null;
+let lineToolPreview = null;
 
 function pressure(e) {
     const pid = Number.isFinite(e?.pointerId) ? e.pointerId : -1;
@@ -284,12 +294,39 @@ function startStroke(e) {
       pickCanvasColorAtEvent(e);
       return;
   }
+  if (tool === "text") {
+      const editTarget = findTextEntryAtPoint(activeLayer, currentFrame, x, y);
+      if (editTarget) {
+          openTextEntryAt(editTarget.entry.x, editTarget.entry.y, editTarget);
+      } else {
+          openTextEntryAt(x, y);
+      }
+      return;
+  }
+  resetEraseStrokeBounds();
+  if (tool === "rect") {
+      isDrawing = true;
+      const hex = colorToHex(currentColor);
+      strokeHex = activeLayer === LAYER.FILL ? fillWhite : hex;
+      activeSubColor[activeLayer] = strokeHex;
+      ensureSublayer(activeLayer, strokeHex);
+      renderLayerSwatches(activeLayer);
+      invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, strokeHex);
+      beginGlobalHistoryStep(activeLayer, currentFrame, strokeHex);
+      rectToolStart = { x, y };
+      rectToolPreview = { x, y };
+      return;
+  }
   if (tool === "rect-select") {
       isDrawing = true;
       beginRectSelect(e);
       return;
   }
   if (tool === "lasso-fill") {
+      if (activeLayer !== PAPER_LAYER) {
+          const lassoFillKey = colorToHex(currentColor);
+          invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, lassoFillKey);
+      }
       lassoActive = true;
       isDrawing = true;
       lassoPts = [];
@@ -306,6 +343,8 @@ function startStroke(e) {
   } catch {}
   if (tool === "lasso-erase") {
       if (activeLayer === PAPER_LAYER) return;
+      const lassoEraseKey = resolveKeyFor(activeLayer, activeSubColor?.[activeLayer] ?? currentColor);
+      if (lassoEraseKey) invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, lassoEraseKey);
       lassoActive = true;
       isDrawing = true;
       lassoPts = [];
@@ -337,6 +376,7 @@ function startStroke(e) {
       if (tool === "fill-brush" && !key) return;
       if (tool === "fill-eraser") key = key || null;
       if (tool === "fill-brush") ensureActiveSwatchForColorLayer(activeLayer, key);
+      if (key) invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, key);
       if (tool === "fill-brush") pushUndo(activeLayer, currentFrame, key);
       isDrawing = true;
       if (tool === "fill-eraser") _fillEraseAllLayers = !!e.shiftKey;
@@ -356,6 +396,19 @@ function startStroke(e) {
       startPan(e);
       return;
   }
+  if (tool === "line") {
+      isDrawing = true;
+      const hex = colorToHex(currentColor);
+      strokeHex = activeLayer === LAYER.FILL ? fillWhite : hex;
+      activeSubColor[activeLayer] = strokeHex;
+      ensureSublayer(activeLayer, strokeHex);
+      renderLayerSwatches(activeLayer);
+      invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, strokeHex);
+      beginGlobalHistoryStep(activeLayer, currentFrame, strokeHex);
+      lineToolStart = { x, y };
+      lineToolPreview = { x, y };
+      return;
+  }
   if (activeLayer === PAPER_LAYER) {
       return;
   }
@@ -365,6 +418,7 @@ function startStroke(e) {
   activeSubColor[activeLayer] = strokeHex;
   ensureSublayer(activeLayer, strokeHex);
   renderLayerSwatches(activeLayer);
+  invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, strokeHex);
   beginGlobalHistoryStep(activeLayer, currentFrame, strokeHex);
   pushUndo(activeLayer, currentFrame, strokeHex);
   lastPt = {
@@ -390,6 +444,7 @@ function startStroke(e) {
       const eraserRenderSettings = mergeBrushSettings(eraserSettings, {
           size: eraserSize * eraserTilt
       });
+      extendEraseStrokeBounds(x, y, x + .01, y + .01, eraserRenderSettings?.size || eraserSize * eraserTilt);
       stampLine(ctx, x, y, x + .01, y + .01, eraserRenderSettings, "#ffffff", 1, "destination-out");
   }
   markFrameHasContent(activeLayer, currentFrame, strokeHex || hex);
@@ -400,6 +455,32 @@ function startStroke(e) {
 function markFrameHasContent(L, F, colorStr) {
     const c = getFrameCanvas(L, F, colorStr);
     if (c) c._hasContent = true;
+}
+
+function resetEraseStrokeBounds() {
+    eraseStrokeBounds = null;
+}
+
+function extendEraseStrokeBounds(x0, y0, x1, y1, brushSpan) {
+    const span = Math.max(1, Number(brushSpan) || eraserSize || 1);
+    const pad = Math.max(2, span / 2 + 2);
+    const minX = Math.min(x0, x1) - pad;
+    const minY = Math.min(y0, y1) - pad;
+    const maxX = Math.max(x0, x1) + pad;
+    const maxY = Math.max(y0, y1) + pad;
+    if (!eraseStrokeBounds) {
+        eraseStrokeBounds = {
+            minX,
+            minY,
+            maxX,
+            maxY
+        };
+        return;
+    }
+    eraseStrokeBounds.minX = Math.min(eraseStrokeBounds.minX, minX);
+    eraseStrokeBounds.minY = Math.min(eraseStrokeBounds.minY, minY);
+    eraseStrokeBounds.maxX = Math.max(eraseStrokeBounds.maxX, maxX);
+    eraseStrokeBounds.maxY = Math.max(eraseStrokeBounds.maxY, maxY);
 }
 
 function continueStroke(e) {
@@ -414,12 +495,22 @@ function continueStroke(e) {
       x: x,
       y: y
   };
+  if (tool === "rect") {
+      rectToolPreview = { x, y };
+      queueRenderAll();
+      return;
+  }
   if (tool === "rect-select") {
       updateRectSelect(e);
       lastPt = {
           x: x,
           y: y
       };
+      return;
+  }
+  if (tool === "line") {
+      lineToolPreview = { x, y };
+      queueRenderAll();
       return;
   }
   if (tool === "fill-eraser" || tool === "fill-brush") {
@@ -467,6 +558,7 @@ function continueStroke(e) {
       const eraserRenderSettings = mergeBrushSettings(eraserSettings, {
           size: eraserSize * eraserTilt
       });
+      extendEraseStrokeBounds(lastPt.x, lastPt.y, x, y, eraserRenderSettings?.size || eraserSize * eraserTilt);
       stampLine(ctx, lastPt.x, lastPt.y, x, y, eraserRenderSettings, "#ffffff", 1, "destination-out");
   }
   lastPt = {
@@ -481,17 +573,65 @@ function continueStroke(e) {
 function endStroke() {
   if (!isDrawing) return;
   isDrawing = false;
-  commitGlobalHistoryStep();
   const endKey = strokeHex;
-  strokeHex = null;
-  queueRenderAll();
-  updateTimelineHasContent(currentFrame);
+  const finishingRect = tool === "rect" && rectToolStart && rectToolPreview;
+  const finishingLine = tool === "line" && lineToolStart && lineToolPreview;
+  if (!finishingRect && !finishingLine) {
+      commitGlobalHistoryStep();
+  }
+  if (tool === "rect" && rectToolStart && rectToolPreview) {
+      const hex = strokeHex || activeSubColor?.[activeLayer] || colorToHex(currentColor);
+      const off = getFrameCanvas(activeLayer, currentFrame, hex);
+      const ctx = off.getContext("2d");
+      ctx.strokeStyle = hex;
+      ctx.lineWidth = Math.max(1, brushSize);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.rect(rectToolStart.x, rectToolStart.y, rectToolPreview.x - rectToolStart.x, rectToolPreview.y - rectToolStart.y);
+      ctx.stroke();
+      markFrameHasContent(activeLayer, currentFrame, hex);
+      markGlobalHistoryDirty();
+      commitGlobalHistoryStep();
+      rectToolStart = null;
+      rectToolPreview = null;
+      strokeHex = null;
+      queueRenderAll();
+      updateTimelineHasContent(currentFrame);
+      lastPt = null;
+      stabilizedPt = null;
+      return;
+  }
   if (tool === "rect-select") {
       endRectSelect();
       lastPt = null;
       stabilizedPt = null;
       return;
   }
+  if (tool === "line" && lineToolStart && lineToolPreview) {
+      const hex = strokeHex || activeSubColor?.[activeLayer] || colorToHex(currentColor);
+      const off = getFrameCanvas(activeLayer, currentFrame, hex);
+      const ctx = off.getContext("2d");
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = brushSize;
+      ctx.strokeStyle = hex;
+      ctx.beginPath();
+      ctx.moveTo(lineToolStart.x, lineToolStart.y);
+      ctx.lineTo(lineToolPreview.x, lineToolPreview.y);
+      ctx.stroke();
+      markFrameHasContent(activeLayer, currentFrame, hex);
+      markGlobalHistoryDirty();
+      commitGlobalHistoryStep();
+      lineToolStart = null;
+      lineToolPreview = null;
+      strokeHex = null;
+      queueRenderAll();
+      updateTimelineHasContent(currentFrame);
+      return;
+  }
+  strokeHex = null;
+  queueRenderAll();
+  updateTimelineHasContent(currentFrame);
   if (tool === "lasso-erase" && lassoActive) {
       lassoActive = false;
       applyLassoErase();
@@ -512,14 +652,16 @@ function endStroke() {
       return;
   }
   if (tool === "eraser" && activeLayer !== PAPER_LAYER) {
-      recomputeHasContent(activeLayer, currentFrame, endKey || activeSubColor?.[activeLayer] || currentColor);
-      if (tool === "eraser" && activeLayer !== PAPER_LAYER) {
-          recomputeHasContent(activeLayer, currentFrame, endKey || activeSubColor?.[activeLayer] || currentColor);
-          updateTimelineHasContent(currentFrame);
-          pruneUnusedSublayers(activeLayer);
+      const eraseKey = resolveKeyFor(activeLayer, endKey || activeSubColor?.[activeLayer] || currentColor);
+      if (eraseStrokeBounds && eraseKey && typeof removeTextEntriesIntersectingRect === "function") {
+          const b = eraseStrokeBounds;
+          removeTextEntriesIntersectingRect(activeLayer, currentFrame, eraseKey, b.minX, b.minY, b.maxX - b.minX, b.maxY - b.minY);
       }
+      if (eraseKey) recomputeHasContent(activeLayer, currentFrame, eraseKey);
       updateTimelineHasContent(currentFrame);
+      pruneUnusedSublayers(activeLayer);
   }
+  resetEraseStrokeBounds();
   if (tool === "fill-brush") {
       const seeds = trailPoints.length ? trailPoints : lastPt ? [ lastPt ] : [];
       if (seeds.length) applyFillRegionsFromSeeds(currentFrame, seeds, activeLayer);
@@ -579,6 +721,9 @@ function endStrokeMobileSafe(e) {
       try {
           _fillEraseAllLayers = false;
       } catch {}
+      try {
+          resetEraseStrokeBounds();
+      } catch {}
       return;
   }
   const F = typeof currentFrame === "number" ? currentFrame : 0;
@@ -603,6 +748,9 @@ function endStrokeMobileSafe(e) {
       try {
           stabilizedPt = null;
       } catch {}
+      try {
+          resetEraseStrokeBounds();
+      } catch {}
       return;
   }
   if (tool === "rect-select") {
@@ -617,6 +765,9 @@ function endStrokeMobileSafe(e) {
       } catch {}
       try {
           stabilizedPt = null;
+      } catch {}
+      try {
+          resetEraseStrokeBounds();
       } catch {}
       return;
   }
@@ -643,6 +794,9 @@ function endStrokeMobileSafe(e) {
       _fillEraseAllLayers = false;
       isDrawing = false;
       try {
+          resetEraseStrokeBounds();
+      } catch {}
+      try {
           endGlobalHistoryStep?.();
       } catch {}
       return;
@@ -661,6 +815,9 @@ function endStrokeMobileSafe(e) {
   } catch {}
   try {
       _fillEraseAllLayers = false;
+  } catch {}
+  try {
+      resetEraseStrokeBounds();
   } catch {}
   try {
     queueClearFx?.();
@@ -861,6 +1018,20 @@ function drawRectSelectionOverlay(ctx) {
     ctx.strokeRect(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
     ctx.restore();
 }
+function drawLineToolPreview(ctx) {
+    if (!lineToolStart || !lineToolPreview) return;
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = brushSize;
+    ctx.strokeStyle = currentColor;
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(lineToolStart.x, lineToolStart.y);
+    ctx.lineTo(lineToolPreview.x, lineToolPreview.y);
+    ctx.stroke();
+    ctx.restore();
+}
 function beginRectSelect(e) {
     if (activeLayer === PAPER_LAYER) return;
     const pos = getCanvasPointer(e);
@@ -872,6 +1043,7 @@ function beginRectSelect(e) {
         const inY = pt.y >= rectSelection.y && pt.y <= rectSelection.y + rectSelection.h;
         const sameTarget = rectSelection.L === activeLayer && rectSelection.F === currentFrame && rectSelection.key === key;
         if (inX && inY && sameTarget) {
+            invalidateEditableTextEntriesForCanvas(activeLayer, currentFrame, key);
             const c = getFrameCanvas(activeLayer, currentFrame, key);
             const ctx = c.getContext("2d", {
                 willReadFrequently: true
@@ -1204,6 +1376,7 @@ function eraseFillRegionsFromSeeds(a, b, c, d) {
                 continue;
             }
             const dpx = img.data;
+            let erasedPixels = null;
             let undoPushed = false;
             const ensureUndoOnce = () => {
                 if (undoPushed) return;
@@ -1229,6 +1402,8 @@ function eraseFillRegionsFromSeeds(a, b, c, d) {
                     if (dpx[a4]) {
                         ensureUndoOnce();
                         dpx[a4] = 0;
+                        if (!erasedPixels) erasedPixels = new Uint8Array(w * h);
+                        erasedPixels[idx] = 1;
                         anyHere = true;
                     }
                     if (x + 1 < w) {
@@ -1276,14 +1451,10 @@ function eraseFillRegionsFromSeeds(a, b, c, d) {
             }
             if (!any) continue;
             ctx.putImageData(img, 0, 0);
-            let anyAlpha = false;
-            for (let i = 3; i < dpx.length; i += 4) {
-                if (dpx[i]) {
-                    anyAlpha = true;
-                    break;
-                }
+            if (erasedPixels && typeof removeTextEntriesIntersectingPixelMask === "function") {
+                removeTextEntriesIntersectingPixelMask(L, F, key, erasedPixels, w, h);
             }
-            canvas._hasContent = anyAlpha;
+            canvas._hasContent = recomputeHasContent(L, F, key);
             didAny = true;
         }
         if (didAny) {
@@ -1605,4 +1776,487 @@ function handleGuideClick(x, y) {
     }
     queueRenderAll();
     return true;
+}
+
+function textEntryFont(entry) {
+    const bold = entry.bold ? "bold " : "";
+    const italic = entry.italic ? "italic " : "";
+    const size = Math.max(8, Math.min(200, Number(entry.fontSize) || 32));
+    const family = entry.fontFamily || "Arial";
+    return `${italic}${bold}${size}px ${family}`;
+}
+
+function ensureTextEntries(canvas) {
+    if (!canvas) return [];
+    if (!Array.isArray(canvas._textEntries)) canvas._textEntries = [];
+    return canvas._textEntries;
+}
+
+function invalidateEditableTextEntriesForCanvas(layerIndex, frameIndex, key) {
+    if (layerIndex === PAPER_LAYER) return false;
+    const resolvedKey = resolveKeyFor(layerIndex, key);
+    if (!resolvedKey) return false;
+    const layer = layers?.[layerIndex];
+    const sub = layer?.sublayers?.get?.(resolvedKey);
+    const canvas = sub?.frames?.[frameIndex];
+    if (!canvas || !Array.isArray(canvas._textEntries) || !canvas._textEntries.length) return false;
+    canvas._textEntries.length = 0;
+    return true;
+}
+
+function measureTextEntryBounds(ctx, entry) {
+    if (!ctx || !entry) {
+        return {
+            minX: 0,
+            minY: 0,
+            maxX: 0,
+            maxY: 0
+        };
+    }
+    ctx.save();
+    ctx.font = textEntryFont(entry);
+    ctx.textAlign = entry.align || "left";
+    ctx.textBaseline = "top";
+    const text = String(entry.text || "");
+    const lines = text.split("\n");
+    const lineHeight = Math.max(1, Number(entry.lineHeight) || Math.max(8, Number(entry.fontSize) || 32) * 1.2);
+    let minX = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    for (const line of lines) {
+        const width = Math.max(0, ctx.measureText(line).width);
+        let lineMinX = entry.x;
+        let lineMaxX = entry.x + width;
+        if (entry.align === "center") {
+            lineMinX = entry.x - width / 2;
+            lineMaxX = entry.x + width / 2;
+        } else if (entry.align === "right") {
+            lineMinX = entry.x - width;
+            lineMaxX = entry.x;
+        }
+        minX = Math.min(minX, lineMinX);
+        maxX = Math.max(maxX, lineMaxX);
+    }
+    if (!isFinite(minX)) {
+        minX = entry.x;
+        maxX = entry.x;
+    }
+    const strokePad = entry.strokeEnabled ? Math.max(1, Number(entry.strokeWidth) || 2) : 0;
+    const bounds = {
+        minX: minX - strokePad - 2,
+        minY: entry.y - strokePad - 2,
+        maxX: maxX + strokePad + 2,
+        maxY: entry.y + lineHeight * lines.length + strokePad + 2
+    };
+    ctx.restore();
+    return bounds;
+}
+
+function captureTextEntryBase(ctx, bounds) {
+    if (!ctx || !bounds) return null;
+    const x = Math.max(0, Math.floor(bounds.minX));
+    const y = Math.max(0, Math.floor(bounds.minY));
+    const maxW = ctx.canvas?.width || 0;
+    const maxH = ctx.canvas?.height || 0;
+    const w = Math.max(0, Math.ceil(bounds.maxX) - x);
+    const h = Math.max(0, Math.ceil(bounds.maxY) - y);
+    if (!w || !h || x >= maxW || y >= maxH) return null;
+    const cw = Math.min(w, Math.max(0, maxW - x));
+    const ch = Math.min(h, Math.max(0, maxH - y));
+    if (!cw || !ch) return null;
+    try {
+        return {
+            x,
+            y,
+            w: cw,
+            h: ch,
+            image: ctx.getImageData(x, y, cw, ch)
+        };
+    } catch {
+        return null;
+    }
+}
+
+function restoreTextEntryBase(ctx, entry) {
+    if (!ctx || !entry) return;
+    const snap = entry.baseSnapshot;
+    if (snap && snap.image) {
+        try {
+            ctx.putImageData(snap.image, snap.x, snap.y);
+            return;
+        } catch {}
+    }
+    const b = entry.bounds;
+    if (!b) return;
+    const x = Math.max(0, Math.floor(b.minX));
+    const y = Math.max(0, Math.floor(b.minY));
+    const w = Math.max(0, Math.ceil(b.maxX) - x);
+    const h = Math.max(0, Math.ceil(b.maxY) - y);
+    if (w && h) ctx.clearRect(x, y, w, h);
+}
+
+function renderTextEntryToCanvas(ctx, entry) {
+    if (!ctx || !entry) return;
+    ctx.save();
+    ctx.font = textEntryFont(entry);
+    ctx.textBaseline = "top";
+    ctx.textAlign = entry.align || "left";
+    ctx.fillStyle = entry.fillColor || "#000000";
+    if (entry.strokeEnabled) {
+        ctx.lineJoin = "round";
+        ctx.miterLimit = 2;
+        ctx.lineWidth = Math.max(1, Number(entry.strokeWidth) || 2);
+        ctx.strokeStyle = entry.strokeColor || entry.fillColor || "#000000";
+    }
+    const lines = String(entry.text || "").split("\n");
+    const lineHeight = Math.max(1, Number(entry.lineHeight) || Math.max(8, Number(entry.fontSize) || 32) * 1.2);
+    let lineY = entry.y;
+    for (const line of lines) {
+        if (entry.strokeEnabled) ctx.strokeText(line, entry.x, lineY);
+        ctx.fillText(line, entry.x, lineY);
+        lineY += lineHeight;
+    }
+    ctx.restore();
+}
+
+function removeTextEntriesMatching(layerIndex, frameIndex, key, matchBounds) {
+    const canvas = getFrameCanvas(layerIndex, frameIndex, key);
+    if (!canvas) return false;
+    const entries = ensureTextEntries(canvas);
+    if (!entries.length) return false;
+    const ctx = canvas.getContext("2d", {
+        willReadFrequently: true
+    });
+    if (!ctx) return false;
+
+    let removedCount = 0;
+    const kept = [];
+    for (const entry of entries) {
+        const bounds = entry.bounds || measureTextEntryBounds(ctx, entry);
+        entry.bounds = bounds;
+        if (matchBounds(bounds, entry)) {
+            removedCount++;
+        } else {
+            kept.push(entry);
+        }
+    }
+    if (!removedCount) return false;
+
+    entries.length = 0;
+    for (const entry of kept) entries.push(entry);
+
+    return true;
+}
+
+function removeTextEntriesIntersectingRect(layerIndex, frameIndex, key, x, y, w, h) {
+    const minX = Math.min(x, x + w);
+    const minY = Math.min(y, y + h);
+    const maxX = Math.max(x, x + w);
+    const maxY = Math.max(y, y + h);
+    return removeTextEntriesMatching(layerIndex, frameIndex, key, bounds => {
+        return !(bounds.maxX < minX || bounds.minX > maxX || bounds.maxY < minY || bounds.minY > maxY);
+    });
+}
+
+function removeTextEntriesIntersectingMask(layerIndex, frameIndex, key, maskCanvas) {
+    if (!maskCanvas) return false;
+    const maskW = maskCanvas.width | 0;
+    const maskH = maskCanvas.height | 0;
+    if (!maskW || !maskH) return false;
+    const maskCtx = maskCanvas.getContext("2d", {
+        willReadFrequently: true
+    });
+    if (!maskCtx) return false;
+    let maskData;
+    try {
+        maskData = maskCtx.getImageData(0, 0, maskW, maskH).data;
+    } catch {
+        return false;
+    }
+    return removeTextEntriesMatching(layerIndex, frameIndex, key, bounds => {
+        const x0 = Math.max(0, Math.floor(bounds.minX));
+        const y0 = Math.max(0, Math.floor(bounds.minY));
+        const x1 = Math.min(maskW, Math.ceil(bounds.maxX));
+        const y1 = Math.min(maskH, Math.ceil(bounds.maxY));
+        if (x0 >= x1 || y0 >= y1) return false;
+        for (let py = y0; py < y1; py++) {
+            for (let px = x0; px < x1; px++) {
+                if (maskData[(py * maskW + px) * 4 + 3] > 0) return true;
+            }
+        }
+        return false;
+    });
+}
+
+function removeTextEntriesIntersectingPixelMask(layerIndex, frameIndex, key, pixelMask, maskW, maskH) {
+    if (!pixelMask || !maskW || !maskH) return false;
+    return removeTextEntriesMatching(layerIndex, frameIndex, key, bounds => {
+        const x0 = Math.max(0, Math.floor(bounds.minX));
+        const y0 = Math.max(0, Math.floor(bounds.minY));
+        const x1 = Math.min(maskW, Math.ceil(bounds.maxX));
+        const y1 = Math.min(maskH, Math.ceil(bounds.maxY));
+        if (x0 >= x1 || y0 >= y1) return false;
+        for (let py = y0; py < y1; py++) {
+            for (let px = x0; px < x1; px++) {
+                if (pixelMask[py * maskW + px]) return true;
+            }
+        }
+        return false;
+    });
+}
+
+function findTextEntryAtPoint(layerIndex, frameIndex, x, y) {
+    const layer = layers?.[layerIndex];
+    if (!layer?.sublayers) return null;
+    const order = Array.isArray(layer.suborder) ? layer.suborder : Array.from(layer.sublayers.keys());
+    for (let o = order.length - 1; o >= 0; o--) {
+        const key = order[o];
+        const sub = layer.sublayers.get(key);
+        const canvas = sub?.frames?.[frameIndex];
+        if (!canvas) continue;
+        const entries = canvas._textEntries;
+        if (!Array.isArray(entries) || !entries.length) continue;
+        const ctx = canvas.getContext("2d");
+        for (let i = entries.length - 1; i >= 0; i--) {
+            const entry = entries[i];
+            const bounds = entry.bounds || measureTextEntryBounds(ctx, entry);
+            entry.bounds = bounds;
+            if (x >= bounds.minX && x <= bounds.maxX && y >= bounds.minY && y <= bounds.maxY) {
+                return {
+                    layerIndex,
+                    frameIndex,
+                    key,
+                    canvas,
+                    entry
+                };
+            }
+        }
+    }
+    return null;
+}
+
+function findTextEntryById(layerIndex, frameIndex, id) {
+    if (!id) return null;
+    const layer = layers?.[layerIndex];
+    if (!layer?.sublayers) return null;
+    const order = Array.isArray(layer.suborder) ? layer.suborder : Array.from(layer.sublayers.keys());
+    for (const key of order) {
+        const sub = layer.sublayers.get(key);
+        const canvas = sub?.frames?.[frameIndex];
+        if (!canvas) continue;
+        const entries = canvas._textEntries;
+        if (!Array.isArray(entries) || !entries.length) continue;
+        const entry = entries.find(item => item?.id === id);
+        if (!entry) continue;
+        return {
+            layerIndex,
+            frameIndex,
+            key,
+            canvas,
+            entry
+        };
+    }
+    return null;
+}
+
+function applyTextFormValuesToEntry(entry, options) {
+    entry.text = options.text;
+    entry.fontSize = options.fontSize;
+    entry.fontFamily = options.fontFamily;
+    entry.bold = options.bold;
+    entry.italic = options.italic;
+    entry.align = options.align;
+    entry.strokeEnabled = options.strokeEnabled;
+    entry.strokeWidth = options.strokeWidth;
+    entry.fillColor = options.fillColor;
+    entry.strokeColor = options.strokeColor;
+    entry.lineHeight = options.fontSize * 1.2;
+}
+
+function openTextEntryAt(cx, cy, editTarget = null) {
+    const dialog = document.getElementById("canvasTextEntry");
+    const label = document.getElementById("canvasTextEntryLabel");
+    const input = document.getElementById("canvasTextEntryInput");
+    const sizeInput = document.getElementById("canvasTextEntrySize");
+    const fontSelect = document.getElementById("canvasTextEntryFont");
+    const alignSelect = document.getElementById("canvasTextEntryAlign");
+    const boldCheck = document.getElementById("canvasTextEntryBold");
+    const italicCheck = document.getElementById("canvasTextEntryItalic");
+    const strokeCheck = document.getElementById("canvasTextEntryStroke");
+    const strokeWidthInput = document.getElementById("canvasTextEntryStrokeWidth");
+    const applyBtn = document.getElementById("canvasTextEntryApply");
+    if (!dialog || !input) return;
+
+    const entry = editTarget?.entry || null;
+    textEntryEditId = entry?.id || null;
+    textEntryX = Math.round(entry?.x ?? cx);
+    textEntryY = Math.round(entry?.y ?? cy);
+    textEntryActive = true;
+
+    if (entry) {
+        input.value = entry.text || "";
+        if (sizeInput) sizeInput.value = String(Math.max(8, Math.min(200, Number(entry.fontSize) || 32)));
+        if (fontSelect) fontSelect.value = entry.fontFamily || "Arial";
+        if (alignSelect) alignSelect.value = entry.align || "left";
+        if (boldCheck) boldCheck.checked = !!entry.bold;
+        if (italicCheck) italicCheck.checked = !!entry.italic;
+        if (strokeCheck) strokeCheck.checked = !!entry.strokeEnabled;
+        if (strokeWidthInput) strokeWidthInput.value = String(Math.max(1, Math.min(16, Number(entry.strokeWidth) || 2)));
+        if (label) label.textContent = "Edit Text";
+        if (applyBtn) applyBtn.textContent = "Update Text";
+    } else {
+        input.value = "";
+        if (alignSelect && !alignSelect.value) alignSelect.value = "left";
+        if (label) label.textContent = "Add Text";
+        if (applyBtn) applyBtn.textContent = "Add Text";
+    }
+
+    dialog.hidden = false;
+    dialog.classList.add("open");
+    try {
+        const preview = document.getElementById("brushCursorPreview");
+        if (preview) preview.style.display = "none";
+        scheduleBrushPreviewUpdate?.(true);
+    } catch {}
+    setTimeout(() => input.focus(), 50);
+}
+
+function closeTextEntry() {
+    const dialog = document.getElementById("canvasTextEntry");
+    const label = document.getElementById("canvasTextEntryLabel");
+    const applyBtn = document.getElementById("canvasTextEntryApply");
+    if (!dialog) return;
+    textEntryActive = false;
+    textEntryEditId = null;
+    dialog.hidden = true;
+    dialog.classList.remove("open");
+    if (label) label.textContent = "Add Text";
+    if (applyBtn) applyBtn.textContent = "Add Text";
+    try {
+        scheduleBrushPreviewUpdate?.(true);
+    } catch {}
+}
+
+function applyTextEntry() {
+    const input = document.getElementById("canvasTextEntryInput");
+    const sizeInput = document.getElementById("canvasTextEntrySize");
+    const fontSelect = document.getElementById("canvasTextEntryFont");
+    const alignSelect = document.getElementById("canvasTextEntryAlign");
+    const boldCheck = document.getElementById("canvasTextEntryBold");
+    const italicCheck = document.getElementById("canvasTextEntryItalic");
+    const strokeCheck = document.getElementById("canvasTextEntryStroke");
+    const strokeWidthInput = document.getElementById("canvasTextEntryStrokeWidth");
+    if (!input) return;
+
+    const text = String(input.value || "").replace(/\r/g, "");
+    const fillHex = colorToHex(currentColor);
+    const options = {
+        text,
+        fontSize: Math.max(8, Math.min(200, parseInt(sizeInput?.value || "32", 10) || 32)),
+        fontFamily: fontSelect?.value || "Arial",
+        align: alignSelect?.value || "left",
+        bold: !!boldCheck?.checked,
+        italic: !!italicCheck?.checked,
+        strokeEnabled: !!strokeCheck?.checked,
+        strokeWidth: Math.max(1, Math.min(16, parseInt(strokeWidthInput?.value || "2", 10) || 2)),
+        fillColor: fillHex,
+        strokeColor: fillHex
+    };
+
+    const editTarget = textEntryEditId ? findTextEntryById(activeLayer, currentFrame, textEntryEditId) : null;
+    const editEntry = editTarget?.entry || null;
+    const targetLayer = editTarget?.layerIndex ?? activeLayer;
+    const targetFrame = editTarget?.frameIndex ?? currentFrame;
+    const targetKey = editTarget?.key ?? (targetLayer === LAYER.FILL ? fillWhite : options.fillColor);
+
+    if (targetLayer === PAPER_LAYER) {
+        closeTextEntry();
+        return;
+    }
+
+    if (!text.trim()) {
+        if (editTarget && editEntry) {
+            beginGlobalHistoryStep(targetLayer, targetFrame, targetKey);
+            pushUndo(targetLayer, targetFrame, targetKey);
+            const ctx = editTarget.canvas.getContext("2d");
+            restoreTextEntryBase(ctx, editEntry);
+            const entries = ensureTextEntries(editTarget.canvas);
+            const idx = entries.indexOf(editEntry);
+            if (idx >= 0) entries.splice(idx, 1);
+            markGlobalHistoryDirty();
+            commitGlobalHistoryStep();
+            recomputeHasContent(targetLayer, targetFrame, targetKey);
+            queueRenderAll();
+            updateTimelineHasContent(targetFrame);
+        }
+        closeTextEntry();
+        return;
+    }
+
+    beginGlobalHistoryStep(targetLayer, targetFrame, targetKey);
+    pushUndo(targetLayer, targetFrame, targetKey);
+    const canvas = editTarget?.canvas || getFrameCanvas(targetLayer, targetFrame, targetKey);
+    if (!canvas) {
+        closeTextEntry();
+        return;
+    }
+
+    const ctx = canvas.getContext("2d");
+    const entries = ensureTextEntries(canvas);
+    let entry = editEntry;
+    if (!entry) {
+        entry = {
+            id: textEntryNextId++,
+            x: textEntryX,
+            y: textEntryY
+        };
+        entries.push(entry);
+    } else {
+        restoreTextEntryBase(ctx, entry);
+    }
+
+    applyTextFormValuesToEntry(entry, options);
+    const bounds = measureTextEntryBounds(ctx, entry);
+    entry.baseSnapshot = captureTextEntryBase(ctx, bounds);
+    renderTextEntryToCanvas(ctx, entry);
+    entry.bounds = bounds;
+
+    canvas._hasContent = true;
+    markGlobalHistoryDirty();
+    commitGlobalHistoryStep();
+    queueRenderAll();
+    updateTimelineHasContent(targetFrame);
+    closeTextEntry();
+}
+
+function initTextEntry() {
+    const dialog = document.getElementById("canvasTextEntry");
+    const cancelBtn = document.getElementById("canvasTextEntryCancel");
+    const applyBtn = document.getElementById("canvasTextEntryApply");
+    const input = document.getElementById("canvasTextEntryInput");
+    if (!dialog) return;
+    if (dialog.dataset.listenersBound === "1") return;
+    dialog.dataset.listenersBound = "1";
+    cancelBtn?.addEventListener("click", closeTextEntry);
+    applyBtn?.addEventListener("click", applyTextEntry);
+    input?.addEventListener("keydown", e => {
+        if (e.key === "Escape") e.preventDefault();
+    });
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initTextEntry);
+} else {
+    initTextEntry();
+}
+
+function drawRectToolPreview(ctx) {
+    if (!rectToolStart || !rectToolPreview) return;
+    ctx.save();
+    ctx.strokeStyle = colorToHex(currentColor);
+    ctx.lineWidth = Math.max(1, brushSize);
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.rect(rectToolStart.x, rectToolStart.y, rectToolPreview.x - rectToolStart.x, rectToolPreview.y - rectToolStart.y);
+    ctx.stroke();
+    ctx.restore();
 }

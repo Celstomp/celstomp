@@ -126,6 +126,22 @@
   cursor: pointer;
 }
 
+#islandToolsSlot #toolSeg > label svg {
+  width: 20px;
+  height: 20px;
+  color: rgba(255,255,255,0.85);
+  position: relative;
+  z-index: 1;
+}
+
+#islandToolsSlot #toolSeg > label:has(svg) {
+  background-image: none;
+}
+
+#islandToolsSlot #toolSeg > label:has(svg)::before {
+  display: none;
+}
+
 #islandToolsSlot #toolSeg > label::before{
   content: "";
   width: 20px;

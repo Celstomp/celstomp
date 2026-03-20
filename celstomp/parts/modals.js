@@ -52,12 +52,15 @@ document.getElementById('part-modals').innerHTML = `
         <h4>Tools</h4>
         <div class="shortcutRow"><kbd>1</kbd><span>Brush</span></div>
         <div class="shortcutRow"><kbd>2</kbd><span>Eraser</span></div>
-        <div class="shortcutRow"><kbd>3</kbd><span>Fill Brush</span></div>
-        <div class="shortcutRow"><kbd>4</kbd><span>Fill Eraser</span></div>
-        <div class="shortcutRow"><kbd>5</kbd><span>Lasso Fill</span></div>
-        <div class="shortcutRow"><kbd>6</kbd><span>Lasso Erase</span></div>
-        <div class="shortcutRow"><kbd>7</kbd><span>Rect Select</span></div>
-        <div class="shortcutRow"><kbd>8</kbd><span>Eyedropper</span></div>
+        <div class="shortcutRow"><kbd>3</kbd><span>Line</span></div>
+        <div class="shortcutRow"><kbd>4</kbd><span>Rect</span></div>
+        <div class="shortcutRow"><kbd>5</kbd><span>Fill Brush</span></div>
+        <div class="shortcutRow"><kbd>6</kbd><span>Fill Eraser</span></div>
+        <div class="shortcutRow"><kbd>7</kbd><span>Lasso Fill</span></div>
+        <div class="shortcutRow"><kbd>8</kbd><span>Lasso Erase</span></div>
+        <div class="shortcutRow"><kbd>9</kbd><span>Rect Select</span></div>
+        <div class="shortcutRow"><kbd>0</kbd><span>Eyedropper</span></div>
+        <div class="shortcutRow"><kbd>T</kbd><span>Text</span></div>
       </div>
       <div class="shortcutSection">
         <h4>Navigation</h4>
@@ -71,12 +74,17 @@ document.getElementById('part-modals').innerHTML = `
         <div class="shortcutRow"><kbd>R</kbd><span>Next Frame</span></div>
       </div>
       <div class="shortcutSection">
+        <h4>Selection</h4>
+        <div class="shortcutRow"><kbd>H</kbd><span>Flip Horizontal</span></div>
+        <div class="shortcutRow"><kbd>V</kbd><span>Flip Vertical</span></div>
+        <div class="shortcutRow"><kbd>Del</kbd><span>Delete Selection</span></div>
+      </div>
+      <div class="shortcutSection">
         <h4>Actions</h4>
         <div class="shortcutRow"><kbd>Space</kbd><span>Play/Pause</span></div>
         <div class="shortcutRow"><kbd>Ctrl+Z</kbd><span>Undo</span></div>
         <div class="shortcutRow"><kbd>Ctrl+Y</kbd><span>Redo</span></div>
         <div class="shortcutRow"><kbd>Ctrl+Shift+Z</kbd><span>Redo</span></div>
-        <div class="shortcutRow"><kbd>Del</kbd><span>Delete Selection/Color</span></div>
         <div class="shortcutRow"><kbd>F</kbd><span>Fill Current Frame</span></div>
         <div class="shortcutRow"><kbd>O</kbd><span>Toggle Onion</span></div>
       </div>
@@ -223,6 +231,57 @@ document.getElementById('part-modals').innerHTML = `
     <div class="modalActions">
       <button id="autosaveIntervalCancelBtn" type="button">Cancel</button>
       <button id="autosaveIntervalConfirmBtn" type="button">Apply</button>
+    </div>
+  </div>
+
+  <div id="canvasTextEntry" class="canvasTextEntry" role="dialog" aria-modal="true" aria-labelledby="canvasTextEntryLabel" hidden>
+    <div class="canvasTextEntryCard">
+      <div id="canvasTextEntryLabel" class="canvasTextEntryLabel">Add Text</div>
+      <textarea id="canvasTextEntryInput" class="canvasTextEntryInput" rows="3" placeholder="Enter text..."></textarea>
+      <div class="canvasTextEntryOptions">
+        <div class="canvasTextEntryOpt">
+          <span>Font Size</span>
+          <input id="canvasTextEntrySize" class="canvasTextEntryNum" type="number" min="8" max="200" value="32" />
+        </div>
+        <div class="canvasTextEntryOpt">
+          <span>Font</span>
+          <select id="canvasTextEntryFont" class="canvasTextEntrySelect">
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Verdana">Verdana</option>
+          </select>
+        </div>
+        <div class="canvasTextEntryOpt">
+          <span>Align</span>
+          <select id="canvasTextEntryAlign" class="canvasTextEntrySelect">
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+        </div>
+        <div class="canvasTextEntryOpt">
+          <span>Outline Width</span>
+          <input id="canvasTextEntryStrokeWidth" class="canvasTextEntryNum" type="number" min="1" max="16" value="2" />
+        </div>
+        <label class="canvasTextEntryOpt canvasTextEntryOptCheck">
+          <input id="canvasTextEntryBold" type="checkbox" />
+          <span>Bold</span>
+        </label>
+        <label class="canvasTextEntryOpt canvasTextEntryOptCheck">
+          <input id="canvasTextEntryItalic" type="checkbox" />
+          <span>Italic</span>
+        </label>
+        <label class="canvasTextEntryOpt canvasTextEntryOptCheck">
+          <input id="canvasTextEntryStroke" type="checkbox" />
+          <span>Outline</span>
+        </label>
+      </div>
+      <div class="canvasTextEntryActions">
+        <button id="canvasTextEntryCancel" class="canvasTextEntryBtn" type="button">Cancel</button>
+        <button id="canvasTextEntryApply" class="canvasTextEntryBtn canvasTextEntryBtnPrimary" type="button">Add Text</button>
+      </div>
     </div>
   </div>
 `;

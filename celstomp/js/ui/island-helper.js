@@ -237,6 +237,17 @@ function wireFloatingIslandDrag() {
       cachedW = r.width;
       cachedH = r.height;
   };
+  const normalizeUndockedPosition = () => {
+      const r = dock.getBoundingClientRect();
+      if (dock.classList.contains("right-docked")) {
+          setRightDocked(false);
+          dock.style.left = `${Math.round(r.left)}px`;
+          dock.style.top = `${Math.round(r.top)}px`;
+          dock.style.right = "auto";
+          dock.style.bottom = "auto";
+      }
+      return r;
+  };
 
   const clampPos = (x, y) => {
       x = Math.max(pad, Math.min(cachedVW - cachedW - pad, x));
@@ -247,14 +258,9 @@ function wireFloatingIslandDrag() {
   head.addEventListener("pointerdown", e => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
       if (e.target.closest(".islandBtn, .islandBtns, .islandResizeHandle")) return;
-
-      if (dock.classList.contains("right-docked")) {
-          setRightDocked(false);
-      }
+      const r = normalizeUndockedPosition();
 
       updateCache();
-
-      const r = dock.getBoundingClientRect();
       offX = e.clientX - r.left;
       offY = e.clientY - r.top;
       dragging = true;
@@ -273,6 +279,8 @@ function wireFloatingIslandDrag() {
       const pos = clampPos(e.clientX - offX, e.clientY - offY);
       dock.style.left = pos.x + "px";
       dock.style.top = pos.y + "px";
+      dock.style.right = "auto";
+      dock.style.bottom = "auto";
 
       const nearRight = cachedVW - e.clientX < RIGHT_DOCK_THRESHOLD;
       dropZone.classList.toggle("visible", nearRight);

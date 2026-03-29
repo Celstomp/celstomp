@@ -76,6 +76,17 @@ document.getElementById('part-timeline').innerHTML = `
           </button>
         </div>
 
+<div class="gridGuideCtrls">
+          <button id="toggleGridBtn" class="miniBtn" title="Toggle Grid (G)">Grid</button>
+          <input id="gridSizeInput" type="number" min="8" max="128" value="32" title="Grid Size" style="width:50px;" />
+          <button id="toggleGridSnapBtn" class="miniBtn" title="Toggle Grid Snap">Snap</button>
+          <button id="toggleGuidesBtn" class="miniBtn" title="Toggle Guides">Guides</button>
+          <button id="toggleGuideSnapBtn" class="miniBtn" title="Toggle Guide Snap">GSnap</button>
+          <button id="addGuideHBtn" class="miniBtn" title="Add Horizontal Guide">H Guide</button>
+          <button id="addGuideVBtn" class="miniBtn" title="Add Vertical Guide">V Guide</button>
+          <button id="clearGuidesBtn" class="miniBtn danger" title="Clear Guides">Clear</button>
+        </div>
+
         <button id="hideTimelineBtn" class="tl-icon-btn" title="Hide Timeline" onclick="document.body.classList.add('tl-collapsed');var t=document.getElementById('timeline');if(t){t.hidden=true;t.style.display='none';}var s=document.getElementById('showTimelineEdge');if(s){s.style.display='block';}window.dispatchEvent(new Event('resize'))">
           <svg viewBox="0 0 24 24" width="16" height="16"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
@@ -90,6 +101,6 @@ document.getElementById('part-timeline').innerHTML = `
     </div>
   </section>
 
-
-  <button id="showTimelineEdge" class="edge-btn" onclick="document.body.classList.remove('tl-collapsed');var t=document.getElementById('timeline');if(t){t.hidden=false;t.style.display='';}this.style.display='none';window.dispatchEvent(new Event('resize'))">Show Timeline</button>
+<button id="showTimelineEdge" class="edge-btn" onclick="document.body.classList.remove('tl-collapsed');var t=document.getElementById('timeline');if(t){t.hidden=false;t.style.display='';}this.style.display='none';window.dispatchEvent(new Event('resize'))">Show Timeline</button>
+  <div id="guideModeHint" class="guideModeHint" hidden></div>
 `;

@@ -419,3 +419,51 @@
 #islandSidePanel #clearAllBtn.danger:hover{
   background: rgba(255,107,107,0.10);
 }
+
+/* Custom scrollbar for layers */
+#islandLayersSlot {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.22) rgba(0,0,0,0.18);
+}
+
+#islandLayersSlot::-webkit-scrollbar {
+  width: 8px;
+}
+
+#islandLayersSlot::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.18);
+  border-radius: 4px;
+}
+
+#islandLayersSlot::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.20);
+  border-radius: 4px;
+}
+
+#islandLayersSlot::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.30);
+}
+
+/* Custom scrollbar for side panel */
+.islandSideBody {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.22) rgba(0,0,0,0.18);
+}
+
+.islandSideBody::-webkit-scrollbar {
+  width: 8px;
+}
+
+.islandSideBody::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.18);
+  border-radius: 4px;
+}
+
+.islandSideBody::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.20);
+  border-radius: 4px;
+}
+
+.islandSideBody::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.30);
+}

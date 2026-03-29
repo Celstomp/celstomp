@@ -213,7 +213,6 @@ function wireFloatingIslandDrag() {
           });
       }
   } catch {}
-
   let dragging = false;
   let pid = null;
   let offX = 0;
@@ -225,6 +224,7 @@ function wireFloatingIslandDrag() {
   let cachedW = 0;
   let cachedH = 0;
   const pad = 8;
+
   const updateCache = () => {
       cachedHeaderH = typeof nowCSSVarPx === "function" ? nowCSSVarPx("--header-h", 48) : 48;
       cachedVW = window.innerWidth;
@@ -233,28 +233,31 @@ function wireFloatingIslandDrag() {
       cachedW = r.width;
       cachedH = r.height;
   };
+  const normalizeUnlockedPosition = () => {
+      const r = dock.getBoundingClientRect();
+      if (dock.classList.contains("right-locked")) {
+          setRightLocked(false, {
+              persist: false
+          });
+          dock.style.left = `${Math.round(r.left)}px`;
+          dock.style.top = `${Math.round(r.top)}px`;
+          dock.style.right = "auto";
+          dock.style.bottom = "auto";
+      }
+      return r;
+  };
+
   const clampPos = (x, y) => {
-      // O(1) calculation using cached values to prevent Layout Thrashing
       x = Math.max(pad, Math.min(cachedVW - cachedW - pad, x));
       y = Math.max(cachedHeaderH + pad, Math.min(cachedVH - cachedH - pad, y));
       return { x, y };
   };
+
   head.addEventListener("pointerdown", e => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
       if (e.target.closest(".islandBtn, .islandBtns, .islandResizeHandle")) return;
-
-      if (dock.classList.contains("right-locked")) {
-          const rLocked = dock.getBoundingClientRect();
-          setRightLocked(false, {
-              persist: false
-          });
-          dock.style.left = Math.round(rLocked.left) + "px";
-          dock.style.top = Math.round(rLocked.top) + "px";
-      }
-      
+      const r = normalizeUnlockedPosition();
       updateCache();
-      
-      const r = dock.getBoundingClientRect();
       offX = e.clientX - r.left;
       offY = e.clientY - r.top;
       dragging = true;
@@ -267,11 +270,14 @@ function wireFloatingIslandDrag() {
   }, {
       passive: false
   });
+
   window.addEventListener("pointermove", e => {
       if (!dragging || e.pointerId !== pid) return;
       const pos = clampPos(e.clientX - offX, e.clientY - offY);
       dock.style.left = pos.x + "px";
       dock.style.top = pos.y + "px";
+      dock.style.right = "auto";
+      dock.style.bottom = "auto";
       lockCandidate = e.clientX >= window.innerWidth - LOCK_THRESHOLD;
       dock.classList.toggle("drag-lock-candidate", lockCandidate);
       lockHint.classList.toggle("active", lockCandidate);
@@ -279,6 +285,7 @@ function wireFloatingIslandDrag() {
   }, {
       passive: false
   });
+
   const end = e => {
       if (!dragging || pid != null && e.pointerId !== pid) return;
       dragging = false;

@@ -88,6 +88,9 @@ function initBrushCursorPreview(inputCanvasEl) {
     try {
         $("eraserSizeInput")?.addEventListener("input", () => scheduleBrushPreviewUpdate(true));
     } catch {}
+    try {
+        $("canvasTextEntrySize")?.addEventListener("input", () => scheduleBrushPreviewUpdate(true));
+    } catch {}
     document.addEventListener("change", e => {
         const t = e.target;
         if (!(t instanceof HTMLInputElement)) return;
@@ -314,10 +317,15 @@ function getBrushSizeForPreview(toolKind) {
 }
 function updateBrushPreview() {
     if (!_brushPrevEl || !_brushPrevCanvas) return;
+    if (typeof textEntryActive !== "undefined" && textEntryActive) {
+        _brushPrevEl.style.display = "none";
+        return;
+    }
     const toolKind = getActiveToolKindForPreview();
-    const isBrush = toolKind === "brush";
+    const showForTools = toolKind === "brush" || toolKind === "eraser" || toolKind === "line" || toolKind === "rect" || toolKind === "text";
     const isEraser = toolKind === "eraser";
-    if (!isBrush && !isEraser) {
+    const isText = toolKind === "text";
+    if (!showForTools) {
         _brushPrevEl.style.display = "none";
         return;
     }
@@ -326,6 +334,25 @@ function updateBrushPreview() {
     const cx = pt.x;
     const cy = pt.y;
     const z = typeof getZoom() === "number" && isFinite(getZoom()) ? getZoom() : 1;
+    if (isText) {
+        const textSizeInput = document.getElementById("canvasTextEntrySize");
+        const textSize = Math.max(8, Math.min(200, parseInt(textSizeInput?.value || "32", 10) || 32));
+        const heightCssPx = Math.max(12, Math.min(128, Math.round(textSize * z)));
+        _brushPrevEl.classList.add("simple");
+        _brushPrevEl.classList.remove("eraser");
+        _brushPrevEl.style.left = `${cx}px`;
+        _brushPrevEl.style.top = `${cy}px`;
+        _brushPrevEl.style.width = "2px";
+        _brushPrevEl.style.height = `${heightCssPx}px`;
+        _brushPrevEl.style.border = "none";
+        _brushPrevEl.style.borderRadius = "0";
+        _brushPrevEl.style.boxShadow = "none";
+        _brushPrevEl.style.background = "rgba(255,255,255,.95)";
+        _brushPrevEl.style.clipPath = "none";
+        _brushPrevEl.style.transform = "translate(-50%, -50%)";
+        _brushPrevEl.style.display = "block";
+        return;
+    }
     const settings = isEraser ? eraserSettings : brushSettings;
     const renderSettings = normalizedBrushRenderSettings(settings);
     const shape = brushShapeForType(renderSettings.shape || "circle");
@@ -335,6 +362,7 @@ function updateBrushPreview() {
     const heightCssPx = Math.max(2, dim.h * z);
     _brushPrevEl.classList.remove("simple");
     _brushPrevEl.classList.toggle("eraser", !!isEraser);
+    _brushPrevEl.style.background = "transparent";
     _brushPrevEl.style.border = "1px solid rgba(255,255,255,.95)";
     _brushPrevEl.style.boxShadow = "0 0 0 1px rgba(0,0,0,.78)";
     _brushPrevEl.style.borderStyle = isEraser ? "dashed" : "solid";

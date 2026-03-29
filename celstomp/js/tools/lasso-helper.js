@@ -1,6 +1,8 @@
 let lassoActive = false;
 let lassoPts = [];
 const lassoMinDist = 2.5;
+let _lassoPreviewScheduled = false;
+let _lassoLastPreviewMode = "fill";
 
 function addLassoPoint(pt) {
     const last = lassoPts[lassoPts.length - 1];
@@ -8,7 +10,19 @@ function addLassoPoint(pt) {
         lassoPts.push(pt);
     }
 }
+function scheduleLassoPreview(mode = "fill") {
+    _lassoLastPreviewMode = mode;
+    if (_lassoPreviewScheduled) return;
+    _lassoPreviewScheduled = true;
+    requestAnimationFrame(() => {
+        _lassoPreviewScheduled = false;
+        drawLassoPreviewImmediate(_lassoLastPreviewMode);
+    });
+}
 function drawLassoPreview(mode = "fill") {
+    scheduleLassoPreview(mode);
+}
+function drawLassoPreviewImmediate(mode = "fill") {
     const fxctx = getCanvas(CANVAS_TYPE.fxCanvas).getContext("2d");
     queueClearFx();
     if (lassoPts.length < 2) return;
@@ -26,7 +40,6 @@ function drawLassoPreview(mode = "fill") {
     }
     fxctx.globalAlpha = 1;
     fxctx.lineWidth = Math.max(1 / (getZoom() * dpr), .6);
-    fxctx.setLineDash([ 10 / getZoom(), 7 / getZoom() ]);
     fxctx.strokeStyle = isErase ? "rgba(255,90,90,0.95)" : "rgba(255,255,255,0.95)";
     fxctx.beginPath();
     fxctx.moveTo(lassoPts[0].x, lassoPts[0].y);
@@ -128,27 +141,18 @@ function applyLassoErase() {
     if (!ctx) return false;
     const w = off.width | 0, h = off.height | 0;
     const aaOn = getBrushAntiAliasEnabled();
-    if (aaOn) {
-        ctx.save();
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.fillStyle = "rgba(0,0,0,1)";
-        ctx.beginPath();
-        ctx.moveTo(lassoPts[0].x, lassoPts[0].y);
-        for (let i = 1; i < lassoPts.length; i++) ctx.lineTo(lassoPts[i].x, lassoPts[i].y);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-    } else {
-        let mctx;
-        [_lassoMaskC, mctx] = ensureTmpCanvas(_lassoMaskC, w, h);
-        mctx.save();
-        mctx.fillStyle = "#fff";
-        mctx.beginPath();
-        mctx.moveTo(lassoPts[0].x, lassoPts[0].y);
-        for (let i = 1; i < lassoPts.length; i++) mctx.lineTo(lassoPts[i].x, lassoPts[i].y);
-        mctx.closePath();
-        mctx.fill();
-        mctx.restore();
+    let mctx;
+    [_lassoMaskC, mctx] = ensureTmpCanvas(_lassoMaskC, w, h);
+    mctx.save();
+    mctx.fillStyle = "#fff";
+    mctx.beginPath();
+    mctx.moveTo(lassoPts[0].x, lassoPts[0].y);
+    for (let i = 1; i < lassoPts.length; i++) mctx.lineTo(lassoPts[i].x, lassoPts[i].y);
+    mctx.closePath();
+    mctx.fill();
+    mctx.restore();
+
+    if (!aaOn) {
         const img = mctx.getImageData(0, 0, w, h);
         const d = img.data;
         for (let i = 0; i < d.length; i += 4) {
@@ -159,11 +163,17 @@ function applyLassoErase() {
             d[i + 2] = 255;
         }
         mctx.putImageData(img, 0, 0);
-        ctx.save();
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.drawImage(_lassoMaskC, 0, 0);
-        ctx.restore();
     }
+
+    if (typeof removeTextEntriesIntersectingMask === "function") {
+        removeTextEntriesIntersectingMask(L, currentFrame, key, _lassoMaskC);
+    }
+
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.drawImage(_lassoMaskC, 0, 0);
+    ctx.restore();
+
     recomputeHasContent(L, currentFrame, key);
     queueRenderAll();
     updateTimelineHasContent(currentFrame);

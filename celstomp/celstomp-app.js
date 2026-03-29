@@ -149,6 +149,9 @@
         const eraserSizeInput = $("eraserSize");
         const toolOpacityRange = $("toolOpacityRange");
         const toolAngleRange = $("toolAngleRange");
+        const toolOpacityRow = toolOpacityRange?.closest(".sideRangeRow") || null;
+        const toolAngleRow = toolAngleRange?.closest(".sideRangeRow") || null;
+        const brushFoldSection = toolFoldBrushesBtn?.closest(".toolFold") || null;
         const eraserVal = $("eraserVal");
     
 
@@ -183,16 +186,25 @@
         function refreshToolSettingsUI() {
             const isBrush = tool === "brush";
             const isEraser = tool === "eraser";
-            if (toolSettingsSection) toolSettingsSection.hidden = !(isBrush || isEraser);
-            if (!isBrush && !isEraser) return;
+            const isLine = tool === "line";
+            const isRect = tool === "rect";
+            const isShapeTool = isLine || isRect;
+            const showsBrushSettings = isBrush || isShapeTool;
+            if (toolSettingsSection) toolSettingsSection.hidden = !(showsBrushSettings || isEraser);
+            if (brushFoldSection) brushFoldSection.hidden = isShapeTool;
+            if (toolOpacityRow) toolOpacityRow.hidden = isShapeTool;
+            if (toolAngleRow) toolAngleRow.hidden = isShapeTool;
+            if (!showsBrushSettings && !isEraser) return;
             const s = isEraser ? eraserSettings : brushSettings;
-            if (toolSettingsTitle) toolSettingsTitle.textContent = isEraser ? "Eraser" : "Brushes";
+            if (toolSettingsTitle) toolSettingsTitle.textContent = isEraser ? "Eraser" : isShapeTool ? "Shape Tool" : "Brushes";
             safeSetValue(brushSizeInput, s.size);
             safeSetValue(brushSizeNumInput, s.size);
             safeSetValue(toolOpacityRange, Math.round(s.opacity * 100));
             safeSetValue(toolAngleRange, s.angle);
-            const activeShape = document.querySelector('input[name="brushShape"][value="' + s.shape + '"]');
-            if (activeShape) activeShape.checked = true;
+            if (!isShapeTool) {
+                const activeShape = document.querySelector('input[name="brushShape"][value="' + s.shape + '"]');
+                if (activeShape) activeShape.checked = true;
+            }
         }
         function setFoldExpanded(btn, body, open) {
             if (!btn || !body) return;
@@ -350,6 +362,8 @@
         
         
         function renderBounds() {
+            fxctx.setTransform(1, 0, 0, 1, 0, 0);
+            fxctx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
             setTransform(bctx);
             setTransform(fxctx);
             bctx.fillStyle = "#2a2f38";
@@ -358,6 +372,8 @@
             bctx.fillRect(0, 0, contentW, contentH);
             bctx.strokeRect(0, 0, contentW, contentH);
             drawRectSelectionOverlay(fxctx);
+            drawLineToolPreview(fxctx);
+            drawRectToolPreview(fxctx);
         }
 
         function onionCompositeOperation() {
@@ -404,6 +420,10 @@
         function clearFx() {
             fxctx.setTransform(1, 0, 0, 1, 0, 0);
             fxctx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            setTransform(fxctx);
+            drawRectSelectionOverlay(fxctx);
+            drawLineToolPreview(fxctx);
+            drawRectToolPreview(fxctx);
         }
 
         function wireBrushButtonRightClick() {
@@ -884,7 +904,13 @@
             safeSetChecked(onion, onionEnabled);
             safeSetChecked(psnap, playSnapped);
             toggle?.addEventListener("click", () => {
-                if (isPlaying) pausePlayback(); else startPlayback();
+                if (isPlaying) {
+                    pausePlayback();
+                    toggle.classList.remove("playing");
+                } else {
+                    startPlayback();
+                    toggle.classList.add("playing");
+                }
             });
             prevF?.addEventListener("click", () => gotoFrame(stepBySnap(-1)));
             nextF?.addEventListener("click", () => gotoFrame(stepBySnap(1)));
@@ -901,6 +927,95 @@
                 safeSetValue(snapValue, v);
                 updateHUD();
             });
+            const gridToggle = $("tlGridBtn");
+            const gridSnapToggle = $("tlGridSnapBtn");
+            const rulersToggle = $("tlRulersBtn");
+            const guideSnapToggle = $("tlGuideSnapBtn");
+            const addHGuideBtn = $("addHGuideBtn");
+            const addVGuideBtn = $("addVGuideBtn");
+            const clearGuidesBtn = $("clearGuidesBtn");
+            const guideModeHint = $("guideModeHint");
+            const gridSizeInput = $("tlGridSize");
+            
+            let guidePlacementMode = null;
+            
+            if (gridToggle) {
+                gridToggle.addEventListener("click", e => {
+                    gridEnabled = !gridEnabled;
+                    gridToggle.classList.toggle("active", gridEnabled);
+                    queueRenderAll();
+                });
+            }
+            if (gridSizeInput) {
+                gridSizeInput.addEventListener("change", e => {
+                    const v = Math.max(8, Math.min(128, parseInt(e.target.value) || 32));
+                    gridSize = v;
+                    e.target.value = v;
+                    queueRenderAll();
+                });
+            }
+            if (gridSnapToggle) {
+                gridSnapToggle.addEventListener("click", e => {
+                    gridSnap = !gridSnap;
+                    gridSnapToggle.classList.toggle("active", gridSnap);
+                });
+            }
+            if (rulersToggle) {
+                rulersToggle.addEventListener("click", e => {
+                    rulersEnabled = !rulersEnabled;
+                    rulersToggle.classList.toggle("active", rulersEnabled);
+                    queueRenderAll();
+                });
+            }
+            if (guideSnapToggle) {
+                guideSnapToggle.addEventListener("click", e => {
+                    guideSnap = !guideSnap;
+                    guideSnapToggle.classList.toggle("active", guideSnap);
+                });
+            }
+            function setGuidePlacementMode(mode) {
+                guidePlacementMode = mode;
+                if (addHGuideBtn) addHGuideBtn.classList.toggle("active", mode === "horizontal");
+                if (addVGuideBtn) addVGuideBtn.classList.toggle("active", mode === "vertical");
+                if (guideModeHint) {
+                    guideModeHint.hidden = !mode;
+                    guideModeHint.textContent = mode === "horizontal" ? "Click Canvas To Place H Guide" : mode === "vertical" ? "Click Canvas To Place V Guide" : "";
+                }
+                if (!mode) {
+                    document.body.classList.remove("guide-place-mode");
+                    document.body.classList.remove("guide-place-h");
+                    document.body.classList.remove("guide-place-v");
+                } else {
+                    document.body.classList.add("guide-place-mode");
+                    document.body.classList.toggle("guide-place-h", mode === "horizontal");
+                    document.body.classList.toggle("guide-place-v", mode === "vertical");
+                }
+            }
+            if (addHGuideBtn) {
+                addHGuideBtn.addEventListener("click", e => {
+                    if (guidePlacementMode === "horizontal") {
+                        setGuidePlacementMode(null);
+                    } else {
+                        setGuidePlacementMode("horizontal");
+                    }
+                });
+            }
+            if (addVGuideBtn) {
+                addVGuideBtn.addEventListener("click", e => {
+                    if (guidePlacementMode === "vertical") {
+                        setGuidePlacementMode(null);
+                    } else {
+                        setGuidePlacementMode("vertical");
+                    }
+                });
+            }
+            if (clearGuidesBtn) {
+                clearGuidesBtn.addEventListener("click", () => {
+                    guides = [];
+                    queueRenderAll();
+                });
+            }
+            window.__celstompSetGuidePlacementMode = setGuidePlacementMode;
             function rebuildTimelineKeepFrame() {
                 const cur = currentFrame;
                 buildTimeline();
@@ -935,6 +1050,7 @@
             const showLeft = $("showLeftEdge");
             const showRight = $("showRightEdge");
             const showTl = $("showTimelineEdge");
+            const timelineEl = $("timeline");
             const tLeft = $("toggleSidebarBtn");
             const tRight = $("toggleRightbarBtn");
             function applyLayoutChange() {
@@ -956,7 +1072,27 @@
             }
             function setTimelineOpen(open) {
                 app.classList.toggle("tl-collapsed", !open);
+                document.body?.classList.toggle("tl-collapsed", !open);
+                if (timelineEl) {
+                    timelineEl.hidden = !open;
+                    timelineEl.style.display = open ? "" : "none";
+                    timelineEl.setAttribute("aria-hidden", open ? "false" : "true");
+                }
+                if (showTl) {
+                    showTl.style.display = open ? "none" : "block";
+                }
                 applyLayoutChange();
+            }
+            if (!document._celstompPanelToggleDelegated) {
+                document._celstompPanelToggleDelegated = true;
+                document.addEventListener("click", e => {
+                    if (e.target.closest("#hideLeftPanelBtn")) setLeftOpen(false);
+                    if (e.target.closest("#hideRightPanelBtn")) setRightOpen(false);
+                    if (e.target.closest("#hideTimelineBtn")) setTimelineOpen(false);
+                    if (e.target.closest("#showLeftEdge")) setLeftOpen(true);
+                    if (e.target.closest("#showRightEdge")) setRightOpen(true);
+                    if (e.target.closest("#showTimelineEdge")) setTimelineOpen(true);
+                });
             }
             setLeftOpen(true);
             setRightOpen(true);
@@ -1736,6 +1872,6 @@
         wireEraserButtonRightClick();
         wirePointerDrawingOnCanvas($("drawCanvas"));
 
-        openHomeModal();
+        startNewProject();
     });
 })();

@@ -175,53 +175,49 @@ function wireFloatingIslandDrag() {
   if (!head) return;
   if (dock._dragWired) return;
   dock._dragWired = true;
+  const LOCK_KEY = "celstomp_island_right_locked";
+  const LOCK_THRESHOLD = 170;
 
-  let dropZone = document.querySelector(".island-drop-zone");
-  if (!dropZone) {
-      dropZone = document.createElement("div");
-      dropZone.className = "island-drop-zone";
-      document.body.appendChild(dropZone);
-  }
-
-  let lockHint = document.querySelector(".island-lock-hint");
+  let lockHint = $("islandLockHint");
   if (!lockHint) {
       lockHint = document.createElement("div");
-      lockHint.className = "island-lock-hint";
-      lockHint.textContent = "Release to dock";
+      lockHint.id = "islandLockHint";
+      lockHint.className = "islandLockHint";
+      lockHint.textContent = "Drop To Dock Right";
       document.body.appendChild(lockHint);
   }
 
-  const RIGHT_DOCK_KEY = "celstomp_island_right_docked";
-  const RIGHT_DOCK_THRESHOLD = 80;
-
-  function loadRightDocked() {
-      try {
-          const saved = localStorage.getItem(RIGHT_DOCK_KEY);
-          if (saved === "1") {
-              dock.classList.add("right-docked");
-              dock.style.left = "";
-              dock.style.top = "";
-          }
-      } catch {}
-  }
-  loadRightDocked();
-
-  function setRightDocked(v) {
-      const yes = !!v;
-      dock.classList.toggle("right-docked", yes);
-      try {
-          localStorage.setItem(RIGHT_DOCK_KEY, yes ? "1" : "0");
-      } catch {}
-      if (yes) {
+  function setRightLocked(v, opts = {}) {
+      const isLocked = !!v;
+      const persist = opts.persist !== false;
+      dock.classList.toggle("right-locked", isLocked);
+      if (isLocked) {
           dock.style.left = "";
           dock.style.top = "";
+          dock.style.right = "var(--dock-gap)";
+      } else {
+          dock.style.right = "";
+      }
+      if (persist) {
+          try {
+              localStorage.setItem(LOCK_KEY, isLocked ? "1" : "0");
+          } catch {}
       }
   }
 
+  try {
+      const saved = localStorage.getItem(LOCK_KEY);
+      if (saved === "1") {
+          setRightLocked(true, {
+              persist: false
+          });
+      }
+  } catch {}
   let dragging = false;
   let pid = null;
   let offX = 0;
   let offY = 0;
+  let lockCandidate = false;
   let cachedHeaderH = 48;
   let cachedVW = window.innerWidth;
   let cachedVH = window.innerHeight;
@@ -237,10 +233,12 @@ function wireFloatingIslandDrag() {
       cachedW = r.width;
       cachedH = r.height;
   };
-  const normalizeUndockedPosition = () => {
+  const normalizeUnlockedPosition = () => {
       const r = dock.getBoundingClientRect();
-      if (dock.classList.contains("right-docked")) {
-          setRightDocked(false);
+      if (dock.classList.contains("right-locked")) {
+          setRightLocked(false, {
+              persist: false
+          });
           dock.style.left = `${Math.round(r.left)}px`;
           dock.style.top = `${Math.round(r.top)}px`;
           dock.style.right = "auto";
@@ -258,8 +256,7 @@ function wireFloatingIslandDrag() {
   head.addEventListener("pointerdown", e => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
       if (e.target.closest(".islandBtn, .islandBtns, .islandResizeHandle")) return;
-      const r = normalizeUndockedPosition();
-
+      const r = normalizeUnlockedPosition();
       updateCache();
       offX = e.clientX - r.left;
       offY = e.clientY - r.top;
@@ -281,11 +278,9 @@ function wireFloatingIslandDrag() {
       dock.style.top = pos.y + "px";
       dock.style.right = "auto";
       dock.style.bottom = "auto";
-
-      const nearRight = cachedVW - e.clientX < RIGHT_DOCK_THRESHOLD;
-      dropZone.classList.toggle("visible", nearRight);
-      lockHint.classList.toggle("visible", nearRight);
-
+      lockCandidate = e.clientX >= window.innerWidth - LOCK_THRESHOLD;
+      dock.classList.toggle("drag-lock-candidate", lockCandidate);
+      lockHint.classList.toggle("active", lockCandidate);
       e.preventDefault();
   }, {
       passive: false
@@ -295,18 +290,18 @@ function wireFloatingIslandDrag() {
       if (!dragging || pid != null && e.pointerId !== pid) return;
       dragging = false;
       dock.classList.remove("dragging");
-      dropZone.classList.remove("visible");
-      lockHint.classList.remove("visible");
-
-      const nearRight = cachedVW - e.clientX < RIGHT_DOCK_THRESHOLD;
-      if (nearRight) {
-          setRightDocked(true);
-      }
-
+      dock.classList.remove("drag-lock-candidate");
+      lockHint.classList.remove("active");
       try {
           head.releasePointerCapture(pid);
       } catch {}
       pid = null;
+      if (lockCandidate) {
+          setRightLocked(true);
+      } else {
+          setRightLocked(false);
+      }
+      lockCandidate = false;
   };
 
   window.addEventListener("pointerup", end, {

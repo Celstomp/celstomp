@@ -3,12 +3,12 @@ let zoom = 1;
 let offsetX = 0;
 let offsetY = 0;
 
-const getZoom = () => zoom;
-const setZoom = (z) => zoom = z;
+const _getZoom = () => zoom;
+const _setZoom = (z) => zoom = z;
 
-const getOffsetX = () => offsetX;
-const setOffsetX = (x) => offsetX = x;
+const _getOffsetX = () => offsetX;
+const _setOffsetX = (x) => offsetX = x;
 
-const getOffsetY = () => offsetY;
-const setOffsetY = (y) => offsetY = y;
+const _getOffsetY = () => offsetY;
+const _setOffsetY = (y) => offsetY = y;
 

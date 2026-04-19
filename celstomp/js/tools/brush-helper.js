@@ -1,6 +1,6 @@
 let _brushPrevEl = null;
 let _brushPrevCanvas = null;
-let _brushPrevLastEvt = null;
+let __brushPrevLastEvt = null;
 let _brushPrevRAF = 0;
 let _brushPrevLastXY = null;
 let brushType = "circle";
@@ -24,14 +24,14 @@ let brushSettings = {
 let eraserSettings = {
     ...DEFAULT_TOOL_ERASER_SETTINGS
 };
-brushType = brushSettings.shape;
+_brushType = brushSettings.shape;
 brushSize = brushSettings.size;
 eraserSize = eraserSettings.size;
 
 let antiAlias = false;
-let closeGapPx = 0;
+let _closeGapPx = 0;
 
-function initBrushCursorPreview(inputCanvasEl) {
+function _initBrushCursorPreview(inputCanvasEl) {
     _brushPrevCanvas = inputCanvasEl;
     _brushPrevEl = document.getElementById("brushCursorPreview");
     if (!_brushPrevCanvas || !_brushPrevEl) return;
@@ -84,13 +84,19 @@ function initBrushCursorPreview(inputCanvasEl) {
     });
     try {
         $("brushSizeInput")?.addEventListener("input", () => scheduleBrushPreviewUpdate(true));
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         $("eraserSizeInput")?.addEventListener("input", () => scheduleBrushPreviewUpdate(true));
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         $("canvasTextEntrySize")?.addEventListener("input", () => scheduleBrushPreviewUpdate(true));
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     document.addEventListener("change", e => {
         const t = e.target;
         if (!(t instanceof HTMLInputElement)) return;
@@ -152,7 +158,7 @@ function mergeBrushSettings(base, patch) {
     return next;
 }
 
-function stampLine(ctx, x0, y0, x1, y1, sourceSettings, color, alpha = 1, composite = "source-over") {
+function _stampLine(ctx, x0, y0, x1, y1, sourceSettings, color, alpha = 1, composite = "source-over") {
     const settings = normalizedBrushRenderSettings(sourceSettings);
     const stamp = getBrushStamp(settings, color);
     const dx = x1 - x0, dy = y1 - y0;
@@ -171,7 +177,9 @@ function stampLine(ctx, x0, y0, x1, y1, sourceSettings, color, alpha = 1, compos
     }
     try {
         markGlobalHistoryDirty();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     ctx.restore();
 }
 
@@ -384,7 +392,7 @@ function updateBrushPreview() {
     _brushPrevEl.style.display = "block";
 }
 
-function getBrushAntiAliasEnabled() {
+function _getBrushAntiAliasEnabled() {
     if (typeof brushAntiAlias !== "undefined") return !!brushAntiAlias;
     if (typeof brushAA !== "undefined") return !!brushAA;
     if (typeof antiAlias !== "undefined") return !!antiAlias;
@@ -398,7 +406,7 @@ function getBrushAntiAliasEnabled() {
 ///////////
 
 let _brushCtxMenu = null;
-let _brushCtxState = null;
+let __brushCtxState = null;
 function ensureBrushCtxMenu() {
     if (_brushCtxMenu) return _brushCtxMenu;
     const m = document.createElement("div");
@@ -472,7 +480,9 @@ function ensureBrushCtxMenu() {
         syncMainUIFromState();
         try {
             renderAll?.();
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
     });
     pSizeEl.addEventListener("change", () => {
         usePressureSize = !!pSizeEl.checked;
@@ -493,7 +503,9 @@ function ensureBrushCtxMenu() {
         syncMainUIFromState();
         try {
             renderAll?.();
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
     });
     document.addEventListener("mousedown", e => {
         if (m.hidden) return;
@@ -510,17 +522,21 @@ function ensureBrushCtxMenu() {
     _brushCtxMenu = m;
     return m;
 }
-function openBrushCtxMenu(ev, anchorEl) {
+function _openBrushCtxMenu(ev, anchorEl) {
     try {
         closeEraserCtxMenu?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     const m = ensureBrushCtxMenu();
     _brushCtxState = {
         anchorEl: anchorEl || null
     };
     try {
         m._syncFromState?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     m.hidden = false;
     m.style.left = "0px";
     m.style.top = "0px";
@@ -537,7 +553,9 @@ function openBrushCtxMenu(ev, anchorEl) {
         m.querySelector("#bcmSize")?.focus({
             preventScroll: true
         });
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
 }
 function closeBrushCtxMenu() {
     if (_brushCtxMenu) _brushCtxMenu.hidden = true;

@@ -76,7 +76,9 @@
             const remove = () => {
                 try {
                     overlay.remove();
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
             };
             overlay.classList.add('is-ready');
             overlay.addEventListener('transitionend', remove, { once: true });
@@ -101,7 +103,9 @@
     function persistMobileGateDismissed() {
         try {
             localStorage.setItem(MOBILE_GATE_DISMISS_KEY, '1');
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
     }
 
     function shouldShowMobileGate() {

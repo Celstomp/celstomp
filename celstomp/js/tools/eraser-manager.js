@@ -1,5 +1,5 @@
 let _eraserCtxMenu = null;
-let _eraserCtxState = null;
+let __eraserCtxState = null;
 function ensureEraserCtxMenu() {
     if (_eraserCtxMenu) return _eraserCtxMenu;
     const m = document.createElement("div");
@@ -70,14 +70,18 @@ function ensureEraserCtxMenu() {
 function openEraserCtxMenu(ev, anchorEl) {
     try {
         closeBrushCtxMenu?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     const m = ensureEraserCtxMenu();
     _eraserCtxState = {
         anchorEl: anchorEl || null
     };
     try {
         m._syncFromState?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     m.hidden = false;
     m.style.left = "0px";
     m.style.top = "0px";
@@ -94,7 +98,9 @@ function openEraserCtxMenu(ev, anchorEl) {
         m.querySelector("#ecmSize")?.focus({
             preventScroll: true
         });
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
 }
 function closeEraserCtxMenu() {
     if (_eraserCtxMenu) _eraserCtxMenu.hidden = true;
@@ -102,7 +108,7 @@ function closeEraserCtxMenu() {
 }
 
 // wiring code for eraser
-function wireEraserButtonRightClick() {
+function _wireEraserButtonRightClick() {
   if (document._eraserCtxWired) return;
   document._eraserCtxWired = true;
   const eraserSelectors = [ "#toolEraser", '[data-tool="eraser"]', '[data-tool="fill-eraser"]', '[data-toolid="eraser"]', '[data-toolid="fill-eraser"]', '[data-toolname="eraser"]', '[data-toolname="fill-eraser"]', 'button[value="eraser"]', 'button[value="fill-eraser"]', 'input[value="eraser"]', 'input[value="fill-eraser"]' ].join(",");
@@ -121,5 +127,7 @@ function wireEraserButtonRightClick() {
       getCanvas(CANVAS_TYPE.drawCanvas)?.addEventListener("pointerdown", () => closeEraserCtxMenu(), {
           passive: true
       });
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }

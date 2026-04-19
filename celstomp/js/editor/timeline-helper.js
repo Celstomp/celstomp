@@ -9,10 +9,10 @@ let playSnapped = false;
 // onion
 let onionEnabled = false;
 let transparencyHoldEnabled = false;
-let onionAlpha = .5;
-let onionPrevTint = "#4080ff";
-let onionNextTint = "#40ff78";
-let onionBlendMode = "normal";
+let _onionAlpha = .5;
+let _onionPrevTint = "#4080ff";
+let _onionNextTint = "#40ff78";
+let _onionBlendMode = "normal";
 let keepOnionWhilePlaying = false;
 let keepTransWhilePlaying = false;
 let restoreOnionAfterPlay = false;
@@ -116,14 +116,14 @@ function framesToSF(f) {
   };
 }
 
-function updateTimelineHasContent(F) {
+function _updateTimelineHasContent(F) {
   const tr = $("timelineTable").querySelector("tr.anim-row");
   if (!tr) return;
   const td = tr.children[F + 1];
   if (!td) return;
   td.classList.toggle("hasContent", hasCel(F));
 }
-function refreshTimelineRowHasContentAll() {
+function _refreshTimelineRowHasContentAll() {
   const tr = $("timelineTable").querySelector("tr.anim-row");
   if (!tr) return;
   for (let F = 0; F < totalFrames; F++) {
@@ -132,9 +132,11 @@ function refreshTimelineRowHasContentAll() {
   }
   try {
       highlightTimelineCell?.();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }
-function fallbackSwatchKeyForLayer(L) {
+function _fallbackSwatchKeyForLayer(L) {
   if (L == null || L === PAPER_LAYER) return null;
   const layer = layers?.[L];
   const ord = layer?.suborder || [];
@@ -145,10 +147,12 @@ function fallbackSwatchKeyForLayer(L) {
   if (L === LAYER.FILL) return fillWhite || "#FFFFFF";
   try {
       return rememberedColorForLayer?.(L) ?? "#000000";
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   return "#000000";
 }
-function migrateHistoryForSwatchMove(srcL, dstL, key) {
+function _migrateHistoryForSwatchMove(srcL, dstL, key) {
   if (!historyMap || srcL == null || dstL == null) return;
   const srcK = typeof resolveKeyFor === "function" ? resolveKeyFor(srcL, key) : key;
   const dstK = typeof resolveKeyFor === "function" ? resolveKeyFor(dstL, key) : key;
@@ -196,7 +200,7 @@ function applySnapFrom(start, i) {
   }
   return clamp(i, 0, totalFrames - 1);
 }
-function stepBySnap(delta) {
+function _stepBySnap(delta) {
   if (snapFrames > 0) return clamp(currentFrame + delta * snapFrames, 0, totalFrames - 1);
   return clamp(currentFrame + delta, 0, totalFrames - 1);
 }
@@ -294,10 +298,12 @@ function duplicateCelFrames(srcF, dstF) {
   gotoFrame(dstF);
   try {
       setSingleSelection(dstF);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   return true;
 }
-function onDuplicateCel() {
+function _onDuplicateCel() {
   const F = currentFrame;
   if (hasCel(F)) {
       const nextIdx = nearestNextCelIndex(F);
@@ -315,11 +321,11 @@ function onDuplicateCel() {
       duplicateCelFrames(left, F);
   }
 }
-function gotoPrevCel() {
+function _gotoPrevCel() {
   const p = nearestPrevCelIndex(currentFrame > 0 ? currentFrame : 0);
   if (p >= 0) gotoFrame(p);
 }
-function gotoNextCel() {
+function _gotoNextCel() {
   const n = nearestNextCelIndex(currentFrame);
   if (n >= 0) gotoFrame(n);
 }
@@ -447,7 +453,7 @@ function setCelBundle(F, bundle) {
 function moveCelBundle(fromF, toF) {
   moveFrameAllLayers(fromF, toF);
 }
-function deleteSelectedCels() {
+function _deleteSelectedCels() {
   if (!selectedCels.size) return;
   const frames = selectedSorted();
   for (const f of frames) {
@@ -557,12 +563,14 @@ function moveCel(srcF, dstF) {
   gotoFrame(dstF);
   try {
       setSingleSelection(dstF);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   return true;
 }
 let scrubbing = false;
 let scrubStartFrame = 0;
-let scrubMode = "playhead";
+let _scrubMode = "playhead";
 let draggingClip = null;
 function frameFromClientX(clientX) {
   const playRow = timelineTable.querySelector("tr.playhead-row");
@@ -579,7 +587,7 @@ function overAnimRowAt(clientX, clientY) {
   const el = document.elementFromPoint(clientX, clientY);
   return !!(el && el.closest("tr.anim-row"));
 }
-function celIndices() {
+function _celIndices() {
   const list = [];
   for (let i = 0; i < totalFrames; i++) if (hasCel(i)) list.push(i);
   return list;
@@ -759,7 +767,7 @@ function applyPlayButtonsState() {
   pauseBtn.disabled = !isPlaying;
   stopBtn.disabled = !isPlaying;
 }
-function startPlayback() {
+function _startPlayback() {
   if (isPlaying) return;
   prevOnionState = onionEnabled;
   prevTransState = transparencyHoldEnabled;
@@ -811,7 +819,7 @@ function pausePlayback() {
   }
   queueRenderAll();
 }
-function stopAndRewind() {
+function _stopAndRewind() {
   if (isPlaying) pausePlayback();
   gotoFrame(clipStart);
   const stopBtn = $("stopBtn");
@@ -831,7 +839,7 @@ function nearestNextCelIndex(F) {
 // TIMELINNE INIT FUNCTIONALITY
 ///
 
-function initTimelineOnionContextMenu() {
+function _initTimelineOnionContextMenu() {
   const onionBtn = $("tlOnion");
   const menu = $("onionCtxMenu");
   const block = $("onionOptionsBlock");
@@ -896,7 +904,7 @@ function initTimelineOnionContextMenu() {
   });
 }
 
-function initMobileTimelineScrub() {
+function _initMobileTimelineScrub() {
   const row = $("tlPlayheadRow") || document.querySelector(".playheadRow") || document.querySelector("[data-playhead-row]");
   if (!row || row._mobileScrubWired) return;
   row._mobileScrubWired = true;
@@ -953,7 +961,9 @@ function initMobileTimelineScrub() {
       e.stopPropagation();
       try {
           row.setPointerCapture(activeId);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       scrubAtClientX(e.clientX);
   }, {
       passive: false
@@ -981,7 +991,7 @@ function initMobileTimelineScrub() {
   });
 }
 
-function initTimelineToggleBridge() {
+function _initTimelineToggleBridge() {
   const tlOnion = $("tlOnion");
   const btnOnion = $("toggleOnion");
   if (!tlOnion) return;

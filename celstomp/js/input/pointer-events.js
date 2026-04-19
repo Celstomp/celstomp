@@ -11,7 +11,7 @@ let usePressureTilt = false;
 let brushSize = 3;
 let autofill = false;
 
-let textEntryActive = false;
+let _textEntryActive = false;
 let textEntryX = 0;
 let textEntryY = 0;
 let textEntryEditId = null;
@@ -50,7 +50,7 @@ function tiltAmount(e) {
     return out;
 }
 
-function handlePointerDown(e) {
+function _handlePointerDown(e) {
   if (e.pointerType === "touch" && window.__celstompPinching) return;
   if ((e.ctrlKey || e.metaKey) && e.pointerType !== "touch") {
       if (beginCtrlMove(e)) {
@@ -60,7 +60,9 @@ function handlePointerDown(e) {
   }
   try {
       drawCanvas.setPointerCapture(e.pointerId);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   activePointers.set(e.pointerId, {
       x: e.clientX,
       y: e.clientY,
@@ -82,7 +84,7 @@ function handlePointerDown(e) {
   if (e.button === 2 || tool === "hand") startPan(e); else startStroke(e);
 }
 
-function handlePointerMove(e) {
+function _handlePointerMove(e) {
   if (e.pointerType === "touch") e.preventDefault();
   if (e.pointerType === "touch" && window.__celstompPinching) return;
   if (e.pointerType === "touch") {
@@ -106,7 +108,7 @@ function handlePointerMove(e) {
   }
 }
 
-function handlePointerUp(e) {
+function _handlePointerUp(e) {
   if (e.pointerType === "touch") e.preventDefault();
   if (_ctrlMove.active && e.pointerId === _ctrlMove.pointerId) {
       endCtrlMove(e);
@@ -115,7 +117,9 @@ function handlePointerUp(e) {
   }
   try {
       drawCanvas.releasePointerCapture(e.pointerId);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   pressureCache.delete(e.pointerId);
   tiltCache.delete(e.pointerId);
   activePointers.delete(e.pointerId);
@@ -127,17 +131,17 @@ function handlePointerUp(e) {
 // pen config
 const PRESSURE_MIN = .05;
 let penDetected = false;
-let stabilizationLevel = 5;
+let _stabilizationLevel = 5;
 let pressureSmooth = .45;
 let strokeSmooth = .6;
 
 
 
-function pressureSmoothFromLevel(level) {
+function _pressureSmoothFromLevel(level) {
     const lv = Math.max(0, Math.min(10, Number(level) || 0));
     return Math.max(.2, Math.min(1, 1 - lv * .08));
 }
-function strokeSmoothFromLevel(level) {
+function _strokeSmoothFromLevel(level) {
     const lv = Math.max(0, Math.min(10, Number(level) || 0));
     return Math.max(.2, Math.min(1, 1 - lv * .08));
 }
@@ -323,7 +327,9 @@ function startStroke(e) {
   try {
       const k = tool === "eraser" ? resolveKeyFor(activeLayer, activeSubColor?.[activeLayer] ?? currentColor) : resolveKeyFor(activeLayer, currentColor);
       beginGlobalHistoryStep(activeLayer, currentFrame, k);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   if (tool === "lasso-erase") {
       if (activeLayer === PAPER_LAYER) return;
       const lassoEraseKey = resolveKeyFor(activeLayer, activeSubColor?.[activeLayer] ?? currentColor);
@@ -354,7 +360,9 @@ function startStroke(e) {
           ensureSublayer(LAYER.FILL, key);
           try {
               renderLayerSwatches(LAYER.FILL);
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
       }
       if (tool === "fill-brush" && !key) return;
       if (tool === "fill-eraser") key = key || null;
@@ -625,7 +633,9 @@ function endStroke() {
   }
   try {
       commitGlobalHistoryStep();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   if (tool === "lasso-fill" && lassoActive) {
       lassoActive = false;
       applyLassoFill();
@@ -681,38 +691,56 @@ function endStroke() {
   stabilizedPt = null;
 }
 
-function endStrokeMobileSafe(e) {
+function _endStrokeMobileSafe(e) {
   if (typeof _touchGestureActive !== "undefined" && _touchGestureActive) {
       try {
           cancelLasso?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
         queueClearFx?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           isDrawing = false;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           lastPt = null;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           stabilizedPt = null;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           trailPoints = [];
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           _fillEraseAllLayers = false;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           resetEraseStrokeBounds();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       return;
   }
   const F = typeof currentFrame === "number" ? currentFrame : 0;
   try {
       if (typeof isPanning !== "undefined" && isPanning) endPan();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   if ((tool === "lasso-fill" || tool === "lasso-erase") && typeof lassoActive !== "undefined" && lassoActive) {
       try {
           if (tool === "lasso-fill") applyLassoFill(); else applyLassoErase();
@@ -721,37 +749,57 @@ function endStrokeMobileSafe(e) {
       }
       try {
           cancelLasso();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           isDrawing = false;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           lastPt = null;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           stabilizedPt = null;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           resetEraseStrokeBounds();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       return;
   }
   if (tool === "rect-select") {
       try {
           endRectSelect();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           isDrawing = false;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           lastPt = null;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           stabilizedPt = null;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           resetEraseStrokeBounds();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       return;
   }
   if (tool === "fill-brush" || tool === "fill-eraser") {
@@ -770,7 +818,9 @@ function endStrokeMobileSafe(e) {
       }
       try {
         queueClearFx();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       trailPoints = [];
       lastPt = null;
       stabilizedPt = null;
@@ -778,36 +828,56 @@ function endStrokeMobileSafe(e) {
       isDrawing = false;
       try {
           resetEraseStrokeBounds();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           endGlobalHistoryStep?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       return;
   }
   try {
       isDrawing = false;
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       lastPt = null;
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       stabilizedPt = null;
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       trailPoints = [];
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       _fillEraseAllLayers = false;
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       resetEraseStrokeBounds();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
     queueClearFx?.();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       endGlobalHistoryStep?.();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }
 
 // pan events
@@ -922,10 +992,14 @@ function beginCtrlMove(e) {
   }
   try {
       beginGlobalHistoryStep(_ctrlMove.L, _ctrlMove.F, _ctrlMove.key);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       drawCanvas.setPointerCapture(e.pointerId);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   return true;
 }
 function updateCtrlMove(e) {
@@ -942,7 +1016,9 @@ function updateCtrlMove(e) {
   ctx.clearRect(0, 0, _ctrlMove.w, _ctrlMove.h);
   try {
       markGlobalHistoryDirty();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   ctx.putImageData(_ctrlMove.snap, dx, dy);
   _ctrlMove.canvas._hasContent = true;
   if (typeof queueRenderAll === "function") queueRenderAll();
@@ -960,16 +1036,22 @@ function endCtrlMove(e) {
           }
       }
       _ctrlMove.canvas._hasContent = any;
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   _ctrlMove.active = false;
   try {
       drawCanvas.releasePointerCapture(_ctrlMove.pointerId);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   if (typeof queueRenderAll === "function") queueRenderAll();
   if (typeof updateTimelineHasContent === "function") updateTimelineHasContent(_ctrlMove.F);
   try {
       commitGlobalHistoryStep();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   _ctrlMove.pointerId = null;
   _ctrlMove.canvas = null;
   _ctrlMove.ctx = null;
@@ -990,7 +1072,7 @@ function clearRectSelection() {
     rectSelection.moveDy = 0;
     queueRenderAll();
 }
-function drawRectSelectionOverlay(ctx) {
+function _drawRectSelectionOverlay(ctx) {
     if (!rectSelection.active) return;
     ctx.save();
     ctx.lineWidth = Math.max(1 / Math.max(getZoom(), 1), .75);
@@ -1001,7 +1083,7 @@ function drawRectSelectionOverlay(ctx) {
     ctx.strokeRect(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
     ctx.restore();
 }
-function drawLineToolPreview(ctx) {
+function _drawLineToolPreview(ctx) {
     if (!lineToolStart || !lineToolPreview) return;
     ctx.save();
     ctx.lineCap = "round";
@@ -1158,7 +1240,9 @@ function applyFillRegionsFromSeeds(F, seeds, targetLayer) {
         ensureSublayer(LAYER.FILL, key);
         try {
             renderLayerSwatches(LAYER.FILL);
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
     } else {
         ensureActiveSwatchForColorLayer(layer, key);
     }
@@ -1274,7 +1358,9 @@ function eraseFillRegionsFromSeeds(a, b, c, d) {
             try {
                 const rk = resolveKeyFor(L, want);
                 if (hasKey(rk)) return rk;
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
         }
         if (hasKey(want)) return want;
         if (typeof want === "string") {
@@ -1366,7 +1452,9 @@ function eraseFillRegionsFromSeeds(a, b, c, d) {
                 undoPushed = true;
                 try {
                     pushUndo(L, F, key);
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
             };
             const visited = new Uint8Array(w * h);
             function floodFromSeedIdx(si) {
@@ -1443,7 +1531,9 @@ function eraseFillRegionsFromSeeds(a, b, c, d) {
         if (didAny) {
             try {
                 pruneUnusedSublayers?.(L);
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
         }
     }
     if (!didAny) return false;
@@ -1582,10 +1672,14 @@ function ensureActiveSwatchForColorLayer(L, key) {
     ensureSublayer(L, key);
     try {
         normalizeLayerSwatchKeys(layer);
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         renderLayerSwatches(L);
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
 }
 
 function insideMaskFromLineartOnly(F, gapPx) {
@@ -1765,7 +1859,9 @@ function restoreTextEntryBase(ctx, entry) {
         try {
             ctx.putImageData(snap.image, snap.x, snap.y);
             return;
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
     }
     const b = entry.bounds;
     if (!b) return;
@@ -1839,7 +1935,7 @@ function removeTextEntriesIntersectingRect(layerIndex, frameIndex, key, x, y, w,
     });
 }
 
-function removeTextEntriesIntersectingMask(layerIndex, frameIndex, key, maskCanvas) {
+function _removeTextEntriesIntersectingMask(layerIndex, frameIndex, key, maskCanvas) {
     if (!maskCanvas) return false;
     const maskW = maskCanvas.width | 0;
     const maskH = maskCanvas.height | 0;
@@ -1998,7 +2094,9 @@ function openTextEntryAt(cx, cy, editTarget = null) {
         const preview = document.getElementById("brushCursorPreview");
         if (preview) preview.style.display = "none";
         scheduleBrushPreviewUpdate?.(true);
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     setTimeout(() => input.focus(), 50);
 }
 
@@ -2015,7 +2113,9 @@ function closeTextEntry() {
     if (applyBtn) applyBtn.textContent = "Add Text";
     try {
         scheduleBrushPreviewUpdate?.(true);
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
 }
 
 function applyTextEntry() {
@@ -2131,7 +2231,7 @@ if (document.readyState === "loading") {
     initTextEntry();
 }
 
-function drawRectToolPreview(ctx) {
+function _drawRectToolPreview(ctx) {
     if (!rectToolStart || !rectToolPreview) return;
     ctx.save();
     ctx.strokeStyle = colorToHex(currentColor);

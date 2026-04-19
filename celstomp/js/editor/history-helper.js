@@ -6,10 +6,10 @@ const globalHistory = {
 };
 let _pendingGlobalStep = null;
 let _globalStepDirty = false;
-function markGlobalHistoryDirty() {
+function _markGlobalHistoryDirty() {
     _globalStepDirty = true;
 }
-function beginGlobalHistoryStep(L = activeLayer, F = currentFrame, keyArg = null) {
+function _beginGlobalHistoryStep(L = activeLayer, F = currentFrame, keyArg = null) {
     _globalStepDirty = false;
     if (L === PAPER_LAYER) {
         _pendingGlobalStep = null;
@@ -27,7 +27,7 @@ function beginGlobalHistoryStep(L = activeLayer, F = currentFrame, keyArg = null
         before: snapshotFor(L, F, key)
     };
 }
-function commitGlobalHistoryStep() {
+function _commitGlobalHistoryStep() {
     const s = _pendingGlobalStep;
     _pendingGlobalStep = null;
     if (!s || !_globalStepDirty) return;
@@ -50,10 +50,14 @@ function _jumpToActionContext(L, F) {
             redrawSwatches: true,
             updateHud: true
         });
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         queueRenderAll();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
 }
 function historyKey(L, F, key) {
     return `${L}:${F}:${String(key || "")}`;
@@ -109,7 +113,7 @@ function applySnapshot(L, F, key, shot) {
     updateTimelineHasContent(F);
 }
 
-function pushUndo(L, F, key) {
+function _pushUndo(L, F, key) {
     const k = resolveKeyFor(L, key);
     if (!k) return;
     const hist = ensureHistory(L, F, k);
@@ -118,14 +122,14 @@ function pushUndo(L, F, key) {
     if (hist.undo.length > historyLimit) hist.undo.shift();
     hist.redo.length = 0;
 }
-function undo() {
+function _undo() {
     const action = globalHistory.undo.pop();
     if (!action) return;
     globalHistory.redo.push(action);
     _jumpToActionContext(action.L, action.F);
     applySnapshot(action.L, action.F, action.key, action.before);
 }
-function redo() {
+function _redo() {
     const action = globalHistory.redo.pop();
     if (!action) return;
     globalHistory.undo.push(action);

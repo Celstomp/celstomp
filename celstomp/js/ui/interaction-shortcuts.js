@@ -8,7 +8,7 @@ let previousTool = null;
 
 // keyboard shortcuts, some other stuff tagged "QoL"
 
-function wireQoLFeatures() {
+function _wireQoLFeatures() {
   if (document._celstompQoLWired) return;
   document._celstompQoLWired = true;
 
@@ -105,7 +105,9 @@ function _maybeShowGuidedTutorial(options = {}) {
   let seen = false;
   try {
     seen = localStorage.getItem(STORAGE_KEY) === "1";
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   if (seen && !force) return;
 
   const steps = [ {
@@ -137,7 +139,9 @@ function _maybeShowGuidedTutorial(options = {}) {
   const markSeen = () => {
     try {
       localStorage.setItem(STORAGE_KEY, "1");
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
   };
 
   const findVisibleTarget = selector => {
@@ -618,7 +622,7 @@ function flipSelection(horizontal) {
     if (!ctx) return;
 
     const selSnap = ctx.getImageData(rectSelection.x, rectSelection.y, rectSelection.w, rectSelection.h);
-    const fullSnap = ctx.getImageData(0, 0, contentW, contentH);
+    const _fullSnap = ctx.getImageData(0, 0, contentW, contentH);
 
     beginGlobalHistoryStep(rectSelection.L, rectSelection.F, rectSelection.key);
 
@@ -650,7 +654,7 @@ function flipSelection(horizontal) {
     updateTimelineHasContent(rectSelection.F);
 }
 
-function wireKeyboardShortcuts() {
+function _wireKeyboardShortcuts() {
   if (document._celstompKeysWired) return;
   document._celstompKeysWired = true;
   const isTyping = el => {
@@ -662,10 +666,14 @@ function wireKeyboardShortcuts() {
       tool = t;
       try {
           queueUpdateHUD?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           scheduleBrushPreviewUpdate?.(true);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   };
   const toolByKey = {
       1: "brush",
@@ -696,7 +704,7 @@ function wireKeyboardShortcuts() {
 }
 
 // event handler for key pressed in window
-function onWindowKeyDown(e) {
+function _onWindowKeyDown(e) {
     const ctrl = e.ctrlKey || e.metaKey;
     {
         const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : "";
@@ -952,14 +960,18 @@ function deleteActiveColorAtCurrentFrame() {
     if (!c) return false;
     try {
         pushUndo(L, currentFrame, key);
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         const ctx = c.getContext("2d", {
             willReadFrequently: true
         });
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, contentW, contentH);
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     sub.frames[currentFrame] = null;
     queueRenderAll();
     updateTimelineHasContent(currentFrame);

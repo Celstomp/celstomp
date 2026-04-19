@@ -49,7 +49,9 @@
     function setManualSaveAt(ts = Date.now()) {
       try {
         localStorage.setItem(manualSaveMetaKey, JSON.stringify({ manualSavedAt: ts }));
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
     }
 
     function getLastManualSaveAt() {

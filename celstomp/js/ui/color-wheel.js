@@ -219,7 +219,7 @@ function updateFromSVPoint(x, y) {
     rememberLayerColorSafe();
     drawHSVWheel();
 }
-function initHSVWheelPicker() {
+function _initHSVWheelPicker() {
     const hsvWheelCanvas = $("hsvWheelCanvas");
     const hsvWheelWrap = $("hsvWheelWrap");
     if (!hsvWheelCanvas || !hsvWheelWrap) return;
@@ -251,7 +251,9 @@ function initHSVWheelPicker() {
         _dragMode = null;
         try {
             hsvWheelCanvas.releasePointerCapture(e.pointerId);
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
     });
     hsvWheelCanvas.addEventListener("pointercancel", () => {
         dragging = false;
@@ -266,7 +268,9 @@ function initHSVWheelPicker() {
             pickerShape = e.target.checked ? "triangle" : "square";
             try {
                 localStorage.setItem("celstomp_picker_shape", pickerShape);
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             drawHSVWheel();
         });
     }

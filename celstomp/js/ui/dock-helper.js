@@ -1,4 +1,4 @@
-function dockDrag() {
+function _dockDrag() {
     const dockToggle = $("dockToggleBtn");
     const dock = $("colorDock");
     const head = $("colorDockHeader");

@@ -1,6 +1,6 @@
 
 
-function initMobileNativeZoomGuard() {
+function _initMobileNativeZoomGuard() {
   const stage = document.getElementById("stage");
   if (!stage || stage._nativeZoomGuard) return;
   stage._nativeZoomGuard = true;
@@ -41,33 +41,51 @@ function _wireCanvasPointerDrawingMobileSafe() {
   if (__USE_UNIFIED_CANVAS_INPUT__) {
       try {
           canvasEl.style.touchAction = "none";
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           if (stageEl) stageEl.style.touchAction = "none";
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           if (typeof fxCanvas !== "undefined" && fxCanvas) fxCanvas.style.pointerEvents = "none";
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           if (typeof boundsCanvas !== "undefined" && boundsCanvas) boundsCanvas.style.pointerEvents = "none";
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           window.__CELSTOMP_PTR_DRAW_WIRED__ = true;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       return;
   }
   try {
       if (typeof fxCanvas !== "undefined" && fxCanvas) fxCanvas.style.pointerEvents = "none";
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       if (typeof boundsCanvas !== "undefined" && boundsCanvas) boundsCanvas.style.pointerEvents = "none";
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       canvasEl.style.touchAction = "none";
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       if (stageEl) stageEl.style.touchAction = "none";
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   const addTouchPtr = e => {
       if (e.pointerType !== "touch") return;
       _touchPointers.set(e.pointerId, {
@@ -92,28 +110,44 @@ function _wireCanvasPointerDrawingMobileSafe() {
   const hardCancelStroke = () => {
       try {
           cancelLasso?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
         queueClearFx?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           isDrawing = false;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           isPanning = false;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           lastPt = null;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           stabilizedPt = null;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           trailPoints = [];
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           _fillEraseAllLayers = false;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   };
   const shouldIgnorePointer = e => {
       if (e.pointerType !== "mouse" && e.isPrimary === false) return true;
@@ -132,7 +166,9 @@ function _wireCanvasPointerDrawingMobileSafe() {
       }
       try {
           canvasEl.setPointerCapture(e.pointerId);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           startStroke(e);
       } catch (err) {
@@ -170,10 +206,14 @@ function _wireCanvasPointerDrawingMobileSafe() {
       removeTouchPtr(e);
       try {
           endStrokeMobileSafe(e);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           canvasEl.releasePointerCapture(e.pointerId);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   };
   canvasEl.addEventListener("pointerup", finish, {
       passive: false
@@ -195,18 +235,28 @@ function _updateTouchGestureState() {
     if (!was && _touchGestureActive) {
         try {
             cancelActiveStroke?.();
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
         try {
             endStroke?.(true);
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
         try {
             stopDrawing?.();
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
         try {
             isDrawing = false;
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
         try {
             lastX = lastY = null;
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
     }
 }

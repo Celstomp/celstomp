@@ -161,12 +161,14 @@
         const pressureTiltToggle = $("pressureTilt") || $("usePressureTilt");
         let dpr = window.devicePixelRatio || 1;
 
-        let pickerInitializing = false;
+        let _pickerInitializing = false;
         
         try {
             const savedShape = localStorage.getItem("celstomp_picker_shape");
             if (savedShape === "triangle") pickerShape = "triangle";
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
 
         // listeners for event hooks
         onRenderAll(renderAll);
@@ -445,7 +447,9 @@
                 getCanvas(CANVAS_TYPE.drawCanvas)?.addEventListener("pointerdown", () => closeBrushCtxMenu(), {
                     passive: true
                 });
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
         }
         
         
@@ -460,7 +464,9 @@
             stageViewport._pinchCamWired = true;
             try {
                 stageViewport.style.touchAction = "none";
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             const touches = new Map;
             let pinch = null;
             const VIEW_MIN = .05;
@@ -477,10 +483,14 @@
                 if (touches.size !== 2) return;
                 try {
                     if (isDrawing) endStroke();
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
                 try {
                     if (isPanning) endPan();
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
                 const pts = Array.from(touches.values());
                 const a = pts[0], b = pts[1];
                 const mid = {
@@ -501,7 +511,9 @@
                 for (const pid of touches.keys()) {
                     try {
                         stageViewport.setPointerCapture(pid);
-                    } catch {}
+                    } catch {
+                        // intentionally empty
+                    }
                 }
             }
             function updatePinch() {
@@ -561,7 +573,9 @@
                 touches.delete(e.pointerId);
                 try {
                     stageViewport.releasePointerCapture(e.pointerId);
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
                 if (touches.size < 2) {
                     pinch = null;
                     window.__celstompPinching = false;
@@ -581,7 +595,7 @@
             });
         }
         
-        let pinch = null;
+        let _pinch = null;
         drawCanvas.addEventListener("wheel", e => {
             e.preventDefault();
             const factor = Math.exp(-e.deltaY * .0015);
@@ -604,7 +618,9 @@
             drawCanvas._ptrWired = true;
             try {
                 drawCanvas.style.touchAction = "none";
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
 
             drawCanvas.addEventListener("pointerdown", handlePointerDown, {
                 passive: false
@@ -623,7 +639,9 @@
         const hardResetPinch = () => {
             try {
                 touches.clear();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             pinch = null;
             window.__celstompPinching = false;
             pressureCache.clear();
@@ -646,16 +664,22 @@
             const k = resolveKeyFor(activeLayer, tool === "lasso-erase" ? activeSubColor?.[activeLayer] ?? currentColor : currentColor);
             try {
                 beginGlobalHistoryStep(activeLayer, currentFrame, k);
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             const ok = tool === "lasso-erase" ? applyLassoErase() : applyLassoFill();
             if (ok) {
                 try {
                     markGlobalHistoryDirty();
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
             }
             try {
                 commitGlobalHistoryStep();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             cancelLasso();
             isDrawing = false;
             e?.preventDefault?.();
@@ -721,7 +745,9 @@
                     panel.focus({
                         preventScroll: true
                     });
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
             }
             function closeInfo() {
                 btn.setAttribute("aria-expanded", "false");
@@ -755,10 +781,14 @@
                 const isMobile = () => mq.matches;
                 try {
                     leftBtn.style.touchAction = "manipulation";
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
                 try {
                     rightBtn.style.touchAction = "manipulation";
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
                 let lastToggleAt = 0;
                 const toggleOnce = fn => {
                     const t = performance.now();
@@ -864,13 +894,17 @@
         
         try {
             initMobileTimelineScrub();
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
         
         (() => {
             const boot = () => {
                 try {
                     initTimelineOnionContextMenu();
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
             };
             if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", boot, {
                 once: true
@@ -1210,7 +1244,9 @@
                 canvasBgColor = hex;
                 try {
                     bgColorInput.value = hex;
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
                 renderAll();
             });
         }, {
@@ -1265,7 +1301,9 @@
             document.documentElement.style.setProperty("--font", fontStack);
             try {
                 localStorage.setItem(FONT_STORAGE_KEY, fontName);
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             if (fontSelect) safeSetValue(fontSelect, fontName);
         }
 
@@ -1282,16 +1320,22 @@
             }
             try {
                 syncAllLayerCanvasSizesToContent?.();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             try {
                 localStorage.setItem(ASPECT_STORAGE_KEY, nextRatio);
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             if (createAspectSelect) safeSetValue(createAspectSelect, nextRatio);
             if (!skipResize) {
                 resizeCanvases();
                 try {
                     queueRenderAll?.();
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
             }
         }
 
@@ -1301,7 +1345,9 @@
             let savedFont = "Cascadia";
             try {
                 savedFont = localStorage.getItem(FONT_STORAGE_KEY) || "Cascadia";
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             if (FONT_OPTIONS[savedFont]) {
                 applyFont(savedFont);
             }
@@ -1310,7 +1356,9 @@
             let savedAspect = "16:9";
             try {
                 savedAspect = localStorage.getItem(ASPECT_STORAGE_KEY) || "16:9";
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             safeSetValue(createAspectSelect, normalizedAspectRatio(savedAspect));
         })();
 
@@ -1346,7 +1394,9 @@
             refreshToolSettingsUI();
             try {
                 scheduleBrushPreviewUpdate?.(true);
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
         };
         brushSizeInput?.addEventListener("input", e => {
             applyBrushSizeUi(e.target.value);
@@ -1400,7 +1450,9 @@
             if (chk) chk.checked = transparencyHoldEnabled;
             try {
                 renderAll();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
         }
         function initTransparencyControls() {
             const btn = $("toggleTransparency");
@@ -1476,12 +1528,16 @@
             if (!sub?.frames?.[F]) return false;
             try {
                 beginGlobalHistoryStep?.(L, F, key);
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             sub.frames[F] = null;
             try {
                 markGlobalHistoryDirty?.();
                 commitGlobalHistoryStep?.();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             return true;
         }
 
@@ -1489,23 +1545,35 @@
             for (let L = 0; L < LAYERS_COUNT; L++) {
                 try {
                     pruneUnusedSublayers(L);
-                } catch {}
+                } catch {
+                    // intentionally empty
+                }
             }
             try {
                 updateTimelineHasContent(currentFrame);
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             try {
                 renderLayerSwatches();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             try {
                 queueRenderAll();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             try {
                 queueUpdateHud();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             try {
                 markProjectDirty?.();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
         }
 
         function clearCurrentCelAction() {
@@ -1569,13 +1637,17 @@
                 historyMap.clear();
                 _pendingGlobalStep = null;
                 _globalStepDirty = false;
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             try {
                 clearCelSelection?.();
                 clearRectSelection?.();
                 clearGhostTargets?.();
                 cancelLasso?.();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
         }
 
         function readRecentProjects() {
@@ -1591,7 +1663,9 @@
         function writeRecentProjects(items) {
             try {
                 localStorage.setItem(RECENT_PROJECTS_KEY, JSON.stringify(items.slice(0, RECENT_PROJECTS_LIMIT)));
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
         }
 
         function recordRecentProject(meta = {}) {

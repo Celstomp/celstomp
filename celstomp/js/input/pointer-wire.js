@@ -1,14 +1,18 @@
-function wirePointerDrawingOnCanvas(drawCanvas) {
+function _wirePointerDrawingOnCanvas(drawCanvas) {
   if (!drawCanvas) return;
   if (window.__CELSTOMP_PTR_DRAW_WIRED__) return;
   window.__CELSTOMP_PTR_DRAW_WIRED__ = true;
   const stageViewport = $("stageViewport") || $("stage") || drawCanvas;
   try {
       stageViewport.style.touchAction = "none";
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       drawCanvas.style.touchAction = "none";
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   drawCanvas.addEventListener("contextmenu", e => e.preventDefault());
   const isCanvasDownTarget = t => !!(t && (t.tagName === "CANVAS" || t.closest?.("canvas")));
   const getToolName = () => String(typeof tool !== "undefined" && tool ? tool : "");
@@ -22,7 +26,9 @@ function wirePointerDrawingOnCanvas(drawCanvas) {
               buttons: buttons || 0,
               button: 0
           }));
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   }
   function mouseDown(x, y) {
       // weird as fuck
@@ -140,7 +146,9 @@ function wirePointerDrawingOnCanvas(drawCanvas) {
               e.stopPropagation();
               try {
                   stageViewport.setPointerCapture(e.pointerId);
-              } catch {}
+              } catch {
+                  // intentionally empty
+              }
               beginPinch();
               updatePinch();
               return;
@@ -151,7 +159,9 @@ function wirePointerDrawingOnCanvas(drawCanvas) {
           const pid = e.pointerId;
           try {
               stageViewport.setPointerCapture(pid);
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           const tTool = String(typeof tool !== "undefined" && tool ? tool : "");
           if (IMMEDIATE_TOOLS.has(tTool)) {
               e.preventDefault();
@@ -237,7 +247,9 @@ function wirePointerDrawingOnCanvas(drawCanvas) {
           }
           try {
               stageViewport.releasePointerCapture(e.pointerId);
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           e.preventDefault();
           e.stopPropagation();
           return;

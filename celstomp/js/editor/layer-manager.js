@@ -44,7 +44,7 @@ function normalizeLayerBlendMode(mode) {
     return "normal";
 }
 
-function layerBlendModeCanvasOperation(mode) {
+function _layerBlendModeCanvasOperation(mode) {
     const normalized = normalizeLayerBlendMode(mode);
     if (normalized === "multiply") return "multiply";
     if (normalized === "overlay") return "overlay";
@@ -66,7 +66,7 @@ function setLayerBlendMode(L, mode) {
     queueRenderAll();
 }
 
-function getLayerName(layer) {
+function _getLayerName(layer) {
     switch (layer) {
         case LAYER.LINE:
             return "Line";
@@ -83,7 +83,7 @@ function getLayerName(layer) {
     }
 }
 
-function normalizeMainLayerOrder(order) {
+function _normalizeMainLayerOrder(order) {
     if (!Array.isArray(order)) return DEFAULT_MAIN_LAYER_ORDER.slice();
     const seen = new Set;
     const out = [];
@@ -114,7 +114,7 @@ function rememberCurrentColorForLayer(L = activeLayer) {
   layerColorMem[L] = currentColor;
 }
 
-function applyRememberedColorForLayer(L = activeLayer) {
+function _applyRememberedColorForLayer(L = activeLayer) {
   currentColor = rememberedColorForLayer(L);
   setColorSwatch();
 }
@@ -130,12 +130,16 @@ function syncActiveLayerColorUI({
       if (redrawSwatches) {
           try {
               renderLayerSwatches();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
       }
       if (updateHud) {
           try {
               queueUpdateHud?.();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
       }
       return;
   }
@@ -152,31 +156,45 @@ function syncActiveLayerColorUI({
       currentColor = next;
       try {
           setColorSwatch?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           setHSVPreviewBox?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       if (remember) {
           try {
               rememberCurrentColorForLayer?.(layer);
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
       }
       try {
           drawHSVWheel?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   }
   try {
       setLayerRadioChecked(layer);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   if (redrawSwatches) {
       try {
           renderLayerSwatches();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   }
   if (updateHud) {
       try {
           queueUpdateHud?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   }
 }
 
@@ -196,7 +214,7 @@ function _ctrlMovePickKeyForLayer(L) {
   return activeSubColor?.[L] ?? (typeof currentColor === "string" ? currentColor : "#000000");
 }
 
-function getActiveCelCanvasForMove() {
+function _getActiveCelCanvasForMove() {
   const L = activeLayer;
   const F = currentFrame;
 
@@ -237,7 +255,7 @@ function getFrameCanvas(L, F, colorStr) {
   return sub.frames[F];
 }
 
-function syncAllLayerCanvasSizesToContent() {
+function _syncAllLayerCanvasSizesToContent() {
     const targetW = Math.max(1, contentW | 0);
     const targetH = Math.max(1, contentH | 0);
     for (let L = 0; L < LAYERS_COUNT; L++) {
@@ -291,10 +309,14 @@ function ensureSublayer(L, colorStr) {
       if (Array.isArray(activeSubColor)) activeSubColor[L] = activeSubColor[L] || hex;
       try {
           normalizeLayerSwatchKeys(layer);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           renderLayerSwatches(L);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   } else {
       if (sub.frames.length < totalFrames) {
           const oldLen = sub.frames.length;
@@ -465,7 +487,9 @@ function _canvasHasAnyAlpha(c) {
         for (let i = 3; i < data.length; i += 4) {
             if (data[i] > 0) return true;
         }
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     return false;
 }
 function _sublayerHasAnyContentAccurate(sub) {
@@ -484,7 +508,7 @@ function _sublayerHasAnyContentAccurate(sub) {
     return false;
 }
 
-function pruneUnusedSublayers(L) {
+function _pruneUnusedSublayers(L) {
     if (L === PAPER_LAYER) return false;
     const layer = layers[L];
     if (!layer) return false;
@@ -503,7 +527,9 @@ function pruneUnusedSublayers(L) {
                 for (const hk of historyMap.keys()) {
                     if (hk.startsWith(`${L}:`) && hk.endsWith(`:${key}`)) historyMap.delete(hk);
                 }
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
         }
     }
     if (!removedAny) return false;
@@ -517,18 +543,26 @@ function pruneUnusedSublayers(L) {
             currentColor = k;
             try {
                 setColorSwatch?.();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
             try {
                 setHSVPreviewBox?.();
-            } catch {}
+            } catch {
+                // intentionally empty
+            }
         }
     }
     try {
         normalizeLayerSwatchKeys(layer);
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         renderLayerSwatches(L);
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     return true;
 }
 
@@ -552,7 +586,7 @@ function layerRadioIdForLayer(L) {
   return "bt-fill";
 }
 
-function layerFromValue(val) {
+function _layerFromValue(val) {
   if (val === "paper") return PAPER_LAYER;
   if (val === "sketch") return LAYER.SKETCH;
   if (val === "line") return LAYER.LINE;
@@ -568,7 +602,7 @@ function setLayerRadioChecked(L) {
   if (r) r.checked = true;
 }
 
-function mainLayerHasContent(L, F) {
+function _mainLayerHasContent(L, F) {
     const layer = layers[L];
     if (!layer || !layer.suborder || !layer.sublayers) return false;
     for (const key of layer.suborder) {
@@ -672,7 +706,9 @@ function openLayerOpacityMenu(L, ev) {
         range?.focus({
             preventScroll: true
         });
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
 }
 function closeLayerOpacityMenu() {
     if (_layerOpMenu) _layerOpMenu.hidden = true;
@@ -828,7 +864,7 @@ function injectVisBtn(radioId, L) {
     updateVisBtn(L);
 }
 
-function wireLayerVisButtons() {
+function _wireLayerVisButtons() {
     applyLayerSegOrder();
     injectVisBtn("bt-paper", PAPER_LAYER);
     injectVisBtn("bt-fill", LAYER.FILL);

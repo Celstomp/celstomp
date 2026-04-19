@@ -1,10 +1,10 @@
-let lassoActive = false;
+let _lassoActive = false;
 let lassoPts = [];
 const lassoMinDist = 2.5;
 let _lassoPreviewScheduled = false;
 let _lassoLastPreviewMode = "fill";
 
-function addLassoPoint(pt) {
+function _addLassoPoint(pt) {
     const last = lassoPts[lassoPts.length - 1];
     if (!last || Math.hypot(pt.x - last.x, pt.y - last.y) >= lassoMinDist) {
         lassoPts.push(pt);
@@ -19,7 +19,7 @@ function scheduleLassoPreview(mode = "fill") {
         drawLassoPreviewImmediate(_lassoLastPreviewMode);
     });
 }
-function drawLassoPreview(mode = "fill") {
+function _drawLassoPreview(mode = "fill") {
     scheduleLassoPreview(mode);
 }
 function drawLassoPreviewImmediate(mode = "fill") {
@@ -59,7 +59,7 @@ function ensureTmpCanvas(c, w, h) {
     ctx.clearRect(0, 0, w, h);
     return [ c, ctx ];
 }
-function applyLassoFill() {
+function _applyLassoFill() {
     const hex = colorToHex(currentColor);
     pushUndo(activeLayer, currentFrame, hex);
     activeSubColor[activeLayer] = hex;
@@ -121,7 +121,7 @@ function applyLassoFill() {
     updateTimelineHasContent(currentFrame);
     return true;
 }
-function applyLassoErase() {
+function _applyLassoErase() {
     if (activeLayer === PAPER_LAYER) return false;
     if (lassoPts.length < 3) return false;
     const L = activeLayer;
@@ -134,7 +134,9 @@ function applyLassoErase() {
     if (!off) return false;
     try {
         pushUndo(L, currentFrame, key);
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     const ctx = off.getContext("2d", {
         willReadFrequently: true
     });
@@ -204,7 +206,7 @@ function recomputeHasContent(L, F, key) {
   }
 }
 
-function cancelLasso() {
+function _cancelLasso() {
     lassoActive = false;
     lassoPts = [];
     queueClearFx();

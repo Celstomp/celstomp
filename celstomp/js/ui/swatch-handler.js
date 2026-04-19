@@ -1,14 +1,18 @@
 let _swatchCtxMenu = null;
 let _swatchCtxState = null;
-let _swatchColorPicker = null;
+let __swatchColorPicker = null;
 
-function openSwatchContextMenu(L, key, ev) {
+function _openSwatchContextMenu(L, key, ev) {
   try {
       ev.preventDefault();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       ev.stopPropagation();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   const layerId = Number(L);
   const layerObj = Number.isFinite(layerId) ? layers?.[layerId] : L;
   const m = ensureSwatchCtxMenu();
@@ -84,19 +88,29 @@ function queueSwatchRecolorPreview(layerId, key, hex) {
               }
               try {
                   requestRender?.();
-              } catch {}
+              } catch {
+                  // intentionally empty
+              }
               try {
                   requestRedraw?.();
-              } catch {}
+              } catch {
+                  // intentionally empty
+              }
               try {
                   redraw?.();
-              } catch {}
+              } catch {
+                  // intentionally empty
+              }
               try {
                   render?.();
-              } catch {}
+              } catch {
+                  // intentionally empty
+              }
               try {
                   queueRenderAll?.();
-              } catch {}
+              } catch {
+                  // intentionally empty
+              }
           }();
       }
       job.running = false;
@@ -119,7 +133,9 @@ async function applySwatchRecolor(layerId, key, newHex) {
   try {
       if (activeSubColor?.[layerId] === key) activeSubColor[layerId] = newKey;
       if (currentColor === key) currentColor = newKey;
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       if (L?.activeSwatchKey === key) L.activeSwatchKey = newKey;
       if (L?.selectedSwatchKey === key) L.selectedSwatchKey = newKey;
@@ -128,7 +144,9 @@ async function applySwatchRecolor(layerId, key, newHex) {
           if (state.activeColorKey === key) state.activeColorKey = newKey;
           if (state.activeSwatchKeyByLayer && L?.id && state.activeSwatchKeyByLayer[L.id] === key) state.activeSwatchKeyByLayer[L.id] = newKey;
       }
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   if (_swatchCtxState?.btn) {
       _swatchCtxState.btn.style.background = newHex;
       _swatchCtxState.btn.style.borderColor = newHex;
@@ -137,22 +155,34 @@ async function applySwatchRecolor(layerId, key, newHex) {
   }
   try {
       requestRender?.();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       requestRedraw?.();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       redraw?.();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       render?.();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       renderLayerSwatches(layerId);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       // queueRenderAll();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }
 const _swatchPreviewJobs = new Map;
 function _swPrevKey(layerId, key) {
@@ -222,17 +252,23 @@ function pickColorLiveOnce(startHex, {onLive: onLive, onCommit: onCommit, onCanc
   const safeLive = hex => {
       try {
           onLive?.(hex);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   };
   const safeCommit = hex => {
       try {
           (onCommit || onLive)?.(hex);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   };
   const safeCancel = () => {
       try {
           onCancel?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   };
   const cleanup = () => {
       inp.removeEventListener("input", onInput);
@@ -263,7 +299,9 @@ function pickColorLiveOnce(startHex, {onLive: onLive, onCommit: onCommit, onCanc
   window.addEventListener("focus", onWinFocus, true);
   try {
       inp.showPicker?.();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   inp.click();
 }
 
@@ -418,7 +456,7 @@ function collectCanvasesForLayerSwatch(L, key) {
   return out;
 }
 
-function wireSwatchPointerDnD(host) {
+function _wireSwatchPointerDnD(host) {
   if (!host || host._swatchPtrDnDWired) return;
   host._swatchPtrDnDWired = true;
   const THRESH = 4;
@@ -511,7 +549,9 @@ function wireSwatchPointerDnD(host) {
       if (!d || e.pointerId !== d.pointerId) return;
       try {
           d.btn.releasePointerCapture(e.pointerId);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       clearHoverTarget();
       clearHoverLayerRow();
       if (d.moved) {
@@ -542,10 +582,14 @@ function wireSwatchPointerDnD(host) {
               if (!ok) {
                   try {
                       renderLayerSwatches(srcL);
-                  } catch {}
+                  } catch {
+                      // intentionally empty
+                  }
                   try {
                       renderLayerSwatches(dstLayer);
-                  } catch {}
+                  } catch {
+                      // intentionally empty
+                  }
               }
               _swatchPtrDrag = null;
               cleanup();
@@ -586,7 +630,9 @@ function wireSwatchPointerDnD(host) {
       };
       try {
           btn.setPointerCapture(e.pointerId);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       window.addEventListener("pointermove", onMove, {
           passive: false
       });
@@ -601,7 +647,7 @@ function wireSwatchPointerDnD(host) {
   });
 }
 
-let _paperColorPicker = null;
+let __paperColorPicker = null;
 
 function commitSwatchOrderFromDOM(host, L) {
     const layer = layers?.[L];
@@ -626,7 +672,9 @@ function commitSwatchOrderFromDOM(host, L) {
     layer.suborder = next;
     try {
         normalizeLayerSwatchKeys(layer);
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     if (activeSubColor?.[L] && !layer.suborder.includes(activeSubColor[L])) {
         activeSubColor[L] = layer.suborder[0] || activeSubColor[L];
     }
@@ -643,7 +691,7 @@ function _swatchHostLayer(host) {
     return null;
 }
 
-let _swatchDnD = null;
+let __swatchDnD = null;
 
 function pairSwatchAcrossLayers(srcL, srcKey, dstL, dstParentKey) {
     if (srcL == null || dstL == null) return false;
@@ -725,7 +773,9 @@ function moveSwatchToLayerUnpaired(srcL, srcKey, dstL) {
         if (!dstLayer.suborder.includes(srcKey)) dstLayer.suborder.push(srcKey);
         try {
             migrateHistoryForSwatchMove(srcL, dstL, srcKey);
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
     } else {
         const si = srcLayer.suborder.indexOf(srcKey);
         if (si >= 0) {
@@ -749,23 +799,31 @@ function moveSwatchToLayerUnpaired(srcL, srcKey, dstL) {
                 redrawSwatches: false,
                 updateHud: true
             });
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
     }
     renderLayerSwatches(srcL);
     if (!sameLayer) renderLayerSwatches(dstL);
     try {
         refreshTimelineRowHasContentAll();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         queueRenderAll?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     return true;
 }
 
 function rememberLayerColorSafe() {
   try {
       rememberCurrentColorForLayer?.(activeLayer);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }
 
 function setHSVPreviewBox() {
@@ -780,7 +838,7 @@ function setCurrentColorHex(hex, {remember: remember = true} = {}) {
   hsvPick = rgbToHsv(...Object.values(hexToRgb(currentColor)));
   drawHSVWheel();
 }
-function setPickerDefaultBlack() {
+function _setPickerDefaultBlack() {
   setCurrentColorHex("#000000", {
       remember: true
   });
@@ -790,13 +848,13 @@ function setPickerDefaultBlack() {
 // palette logic
 const PALETTE_KEY = "celstomp_palette_v1";
         let colorPalette = [];
-        let oklchDefault = {
+        let _oklchDefault = {
             L: 0,
             C: .2,
             H: 180
         };
 
-function loadPalette() {
+function _loadPalette() {
   try {
       const raw = localStorage.getItem(PALETTE_KEY);
       const parsed = raw ? JSON.parse(raw) : [];
@@ -808,7 +866,9 @@ function loadPalette() {
 function savePalette() {
   try {
       localStorage.setItem(PALETTE_KEY, JSON.stringify(colorPalette.slice(0, 48)));
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }
 function renderPalette() {
   const paletteBar = $("paletteBar");
@@ -838,7 +898,7 @@ function renderPalette() {
       paletteBar.appendChild(b);
   }
 }
-function addCurrentColorToPalette() {
+function _addCurrentColorToPalette() {
   const hex = normalizeToHex(currentColor);
   colorPalette = [ hex, ...colorPalette.filter(c => c !== hex) ].slice(0, 48);
   savePalette();

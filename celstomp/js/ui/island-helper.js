@@ -1,6 +1,6 @@
 // island: floating window which can be dragged around
 
-function mountIslandSlots() {
+function _mountIslandSlots() {
   const island = $("floatingIsland");
   const wheelSlot = $("islandWheelSlot");
   const brushesSlot = $("islandBrushesSlot");
@@ -29,17 +29,23 @@ function mountIslandSlots() {
   }
   try {
       drawHSVWheel?.();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       requestAnimationFrame(() => {
           try {
               drawHSVWheel?.();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
       });
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }
 
-function initIslandMinimizeTab() {
+function _initIslandMinimizeTab() {
   const island = $("floatingIsland");
   const collapseBtn = $("islandCollapseBtn");
   const tabBtn = $("islandTab");
@@ -63,7 +69,9 @@ function initIslandMinimizeTab() {
       island.classList.toggle("collapsed", yes);
       try {
           localStorage.setItem(LS_KEY, yes ? "1" : "0");
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   }
   function toggleCollapsed() {
       setCollapsed(!island.classList.contains("collapsed"));
@@ -71,7 +79,9 @@ function initIslandMinimizeTab() {
   try {
       const saved = localStorage.getItem(LS_KEY);
       if (saved === "1") island.classList.add("collapsed");
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   collapseBtn.addEventListener("click", e => {
       e.preventDefault();
       e.stopPropagation();
@@ -98,7 +108,7 @@ function initIslandMinimizeTab() {
   }
 }
 
-function initIslandSidePanel() {
+function _initIslandSidePanel() {
   const island = $("floatingIsland");
   if (!island) return;
   const dock = island.closest(".islandDock") || island;
@@ -128,7 +138,9 @@ function initIslandSidePanel() {
       sidePanel.hidden = !yes;
       try {
           localStorage.setItem(LS_KEY, yes ? "1" : "0");
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   }
   function toggleOpen() {
       setOpen(!dock.classList.contains("side-open"));
@@ -158,7 +170,9 @@ function initIslandSidePanel() {
   try {
       const saved = localStorage.getItem(LS_KEY);
       if (saved === "1") setOpen(true);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   const mo = new MutationObserver(() => {
       if (island.classList.contains("collapsed") || dock.classList.contains("collapsed")) setOpen(false);
   });
@@ -168,7 +182,7 @@ function initIslandSidePanel() {
   });
 }
 
-function wireFloatingIslandDrag() {
+function _wireFloatingIslandDrag() {
   const dock = $("floatingIsland") || document.querySelector(".islandDock");
   if (!dock) return;
   const head = dock.querySelector(".islandHeader");
@@ -201,7 +215,9 @@ function wireFloatingIslandDrag() {
       if (persist) {
           try {
               localStorage.setItem(LOCK_KEY, isLocked ? "1" : "0");
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
       }
   }
 
@@ -212,7 +228,9 @@ function wireFloatingIslandDrag() {
               persist: false
           });
       }
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   let dragging = false;
   let pid = null;
   let offX = 0;
@@ -265,7 +283,9 @@ function wireFloatingIslandDrag() {
       dock.classList.add("dragging");
       try {
           head.setPointerCapture(pid);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       e.preventDefault();
   }, {
       passive: false
@@ -294,7 +314,9 @@ function wireFloatingIslandDrag() {
       lockHint.classList.remove("active");
       try {
           head.releasePointerCapture(pid);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       pid = null;
       if (lockCandidate) {
           setRightLocked(true);
@@ -314,7 +336,7 @@ function wireFloatingIslandDrag() {
 
 let _islandLayerAutoFit = null;
         
-function initIslandLayerAutoFit() {
+function _initIslandLayerAutoFit() {
     if (_islandLayerAutoFit) return;
     const st = {
         raf: 0,
@@ -397,7 +419,7 @@ function initIslandLayerAutoFit() {
     _islandLayerAutoFit = st;
 }
 
-function wireIslandResize() {
+function _wireIslandResize() {
   const dock = document.querySelector(".islandDock") || $("floatingIsland");
   if (!dock || dock._islandResizeWired) return;
   dock._islandResizeWired = true;
@@ -422,7 +444,9 @@ function wireIslandResize() {
           dock.style.left = saved.x + "px";
           dock.style.top = saved.y + "px";
       }
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   let start = null;
   handle.addEventListener("pointerdown", e => {
       e.preventDefault();
@@ -440,7 +464,9 @@ function wireIslandResize() {
       dock.classList.add("resizing");
       try {
           handle.setPointerCapture(e.pointerId);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   }, {
       passive: false
   });
@@ -457,7 +483,9 @@ function wireIslandResize() {
       if (!start || e.pointerId !== start.id) return;
       try {
           handle.releasePointerCapture(start.id);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       dock.classList.remove("resizing");
       try {
           const r = dock.getBoundingClientRect();
@@ -467,7 +495,9 @@ function wireIslandResize() {
               w: Math.round(r.width),
               h: Math.round(r.height)
           }));
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       start = null;
   };
   handle.addEventListener("pointerup", end);

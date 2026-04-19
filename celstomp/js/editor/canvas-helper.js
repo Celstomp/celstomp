@@ -1,6 +1,6 @@
 
 
-function getCanvasPointer(e) {
+function _getCanvasPointer(e) {
   const drawCanvas = $("drawCanvas");
   const rect = drawCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -11,7 +11,7 @@ function getCanvasPointer(e) {
   };
 }
 
-function screenToContent(sx, sy) {
+function _screenToContent(sx, sy) {
   const dpr = window.devicePixelRatio || 1;
   const devX = sx * dpr;
   const devY = sy * dpr;
@@ -23,7 +23,7 @@ function screenToContent(sx, sy) {
   };
 }
 
-function resizeCanvases() {
+function _resizeCanvases() {
   const stageEl = $("stage");
 
   dpr = window.devicePixelRatio || 1;
@@ -59,7 +59,7 @@ function resizeCanvases() {
   initBrushCursorPreview(drawCanvas);
 }
 
-function fxStamp1px(x0, y0, x1, y1) {
+function _fxStamp1px(x0, y0, x1, y1) {
   const s = 1;
   const dx = x1 - x0, dy = y1 - y0;
   const dist = Math.hypot(dx, dy);
@@ -82,13 +82,13 @@ function fxStamp1px(x0, y0, x1, y1) {
   fxctx.restore();
 }
 
-function fxTransform() {
+function _fxTransform() {
   let dpr = window.devicePixelRatio || 1;
   const fxctx = getCanvas(CANVAS_TYPE.fxCanvas).getContext("2d");
   fxctx.setTransform(getZoom() * dpr, 0, 0, getZoom() * dpr, getOffsetX(), getOffsetY());
 }
 
-function setTransform(ctx) {
+function _setTransform(ctx) {
   let dpr = window.devicePixelRatio || 1;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -161,7 +161,7 @@ function centerView() {
   updatePlayheadMarker();
   updateClipMarkers();
 }
-function resetCenter() {
+function _resetCenter() {
   setZoom(1);
   centerView();
 }

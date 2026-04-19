@@ -19,7 +19,7 @@ const autosaveController = window.CelstompAutosave?.createController?.({
   }
 }) || null;
 
-function canvasesWithContentForMainLayerFrame(L, F) {
+function _canvasesWithContentForMainLayerFrame(L, F) {
   const layer = layers[L];
   if (!layer) return [];
   const out = [];
@@ -284,7 +284,9 @@ function getPaperAccessor() {
               set: v => state.showPaper = !!v
           };
       }
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   const cb = document.getElementById("paperToggle") || document.querySelector('input[type="checkbox"][id*="paper" i]') || document.querySelector('input[type="checkbox"][name*="paper" i]');
   if (cb && "checked" in cb) {
       return {
@@ -305,7 +307,9 @@ function getPaperAccessor() {
               set: v => pl.visible = !!v
           };
       }
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   return null;
 }
 async function withExportOverridesAsync(fn) {
@@ -350,7 +354,9 @@ async function canvasToPngDataURL(c) {
   if (typeof c.toDataURL === "function") {
       try {
           return c.toDataURL("image/png");
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   }
   if (typeof c.convertToBlob === "function") {
       const blob = await c.convertToBlob({
@@ -367,7 +373,9 @@ function canvasHasAnyAlpha(c) {
       });
       const data = ctx.getImageData(0, 0, contentW, contentH).data;
       for (let i = 3; i < data.length; i += 4) if (data[i] > 0) return true;
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   return false;
 }
 function uniqStable(arr) {
@@ -388,25 +396,33 @@ function readAutosaveEnabledSetting() {
       const raw = localStorage.getItem(AUTOSAVE_ENABLED_KEY);
       if (raw === "1" || raw === "true") return true;
       if (raw === "0" || raw === "false") return false;
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   return false;
 }
 function readAutosaveIntervalMinutesSetting() {
   try {
       const raw = Number(localStorage.getItem(AUTOSAVE_INTERVAL_MIN_KEY) || 1);
       if (Number.isFinite(raw)) return clamp(Math.round(raw), 1, 120);
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   return 1;
 }
 function writeAutosaveEnabledSetting(v) {
   try {
       localStorage.setItem(AUTOSAVE_ENABLED_KEY, v ? "1" : "0");
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }
 function writeAutosaveIntervalMinutesSetting(v) {
   try {
       localStorage.setItem(AUTOSAVE_INTERVAL_MIN_KEY, String(clamp(Math.round(v), 1, 120)));
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }
 
 function syncAutosaveUiState() {
@@ -458,9 +474,11 @@ function setLastManualSaveAt(ts = Date.now()) {
       localStorage.setItem("celstomp.project.manualsave.v1", JSON.stringify({
           manualSavedAt: ts
       }));
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }
-function getAutosavePayload() {
+function _getAutosavePayload() {
   if (autosaveController) return autosaveController.getPayload();
   return null;
 }
@@ -469,10 +487,10 @@ function updateRestoreAutosaveButton() {
   if (autosaveController) return autosaveController.updateRestoreButton(restoreAutosaveBtn);
   if (restoreAutosaveBtn) restoreAutosaveBtn.disabled = true;
 }
-function wireAutosaveDirtyTracking() {
+function _wireAutosaveDirtyTracking() {
   if (autosaveController) return autosaveController.wireDirtyTracking();
 }
-function maybePromptAutosaveRecovery() {
+function _maybePromptAutosaveRecovery() {
   if (!autosaveController) return;
   autosaveController.promptRecovery({
       source: "autosave-prompt"
@@ -572,10 +590,14 @@ async function buildProjectSnapshot() {
 async function saveProject() {
   try {
       if (typeof pausePlayback === "function") pausePlayback();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   try {
       if (typeof stopPlayback === "function") stopPlayback();
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   const data = await buildProjectSnapshot();
   const blob = new Blob([ JSON.stringify(data) ], {
       type: "application/json"
@@ -602,10 +624,14 @@ function loadProject(file, options = {}) {
           const data = JSON.parse(fr.result);
           try {
               if (typeof stopPlayback === "function") stopPlayback();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           try {
               queueClearFx();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           fps = clamp(parseInt(data.fps || 24, 10), 1, 120);
           seconds = clamp(parseInt(data.seconds || 5, 10), 1, 600);
           totalFrames = fps * seconds;
@@ -685,10 +711,14 @@ function loadProject(file, options = {}) {
           layers[LAYER.FILL].name = "FILL";
           try {
               if (hasTimeline && typeof buildTimeline === "function") buildTimeline();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           try {
               resizeCanvases?.();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           function ensureSubForLoad(layerIndex, key) {
               const lay = layers[layerIndex];
               if (!lay.sublayers) lay.sublayers = new Map;
@@ -715,7 +745,9 @@ function loadProject(file, options = {}) {
                           ctx.clearRect(0, 0, contentW, contentH);
                           ctx.drawImage(img, 0, 0);
                           canvas._hasContent = true;
-                      } catch {}
+                      } catch {
+                          // intentionally empty
+                      }
                       resolve(true);
                   };
                   img.onerror = () => resolve(false);
@@ -759,7 +791,9 @@ function loadProject(file, options = {}) {
                           tasks.push(loadImgIntoCanvas(url, off).then(() => {
                               try {
                                   if (hasTimeline && typeof updateTimelineHasContent === "function") updateTimelineHasContent(fi);
-                              } catch {}
+                              } catch {
+                                  // intentionally empty
+                              }
                           }));
                       }
                   }
@@ -781,7 +815,9 @@ function loadProject(file, options = {}) {
                       tasks.push(loadImgIntoCanvas(url, off).then(() => {
                           try {
                               if (hasTimeline && typeof updateTimelineHasContent === "function") updateTimelineHasContent(fi);
-                          } catch {}
+                          } catch {
+                              // intentionally empty
+                          }
                       }));
                   }
               }
@@ -800,19 +836,29 @@ function loadProject(file, options = {}) {
               if (hasTimeline && typeof updateTimelineHasContent === "function") {
                   for (let f = 0; f < totalFrames; f++) updateTimelineHasContent(f);
               }
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           try {
               for (let L = 0; L < LAYERS_COUNT; L++) renderLayerSwatches?.(L);
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           try {
               wireLayerVisButtons?.();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           try {
               queueRenderAll();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           try {
               queueUpdateHud();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
 
           const brushSizeInput = $("brushSize") || $("brushSizeRange");
           const brushSizeNumInput = $("brushSizeNum");
@@ -871,19 +917,29 @@ function loadProject(file, options = {}) {
           }
           try {
               setColorSwatch?.();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           try {
               setHSVPreviewBox?.();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           try {
               centerView?.();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           try {
               queueUpdateHud();
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           try {
               if (typeof gotoFrame === "function") gotoFrame(currentFrame);
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           const source = String(options?.source || "file");
           if (source.startsWith("autosave")) {
               markProjectDirty();
@@ -899,13 +955,17 @@ function loadProject(file, options = {}) {
                   contentH: contentH,
                   totalFrames: totalFrames
               });
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           updateRestoreAutosaveButton();
       })().catch(err => {
           console.warn("[celstomp] loadProject failed:", err);
           try {
               options?.onError?.(err);
-          } catch {}
+          } catch {
+              // intentionally empty
+          }
           alert("Failed to load project:\n" + (err?.message || String(err)));
       });
   };
@@ -1091,29 +1151,43 @@ async function clearAllProjectState() {
     if (!ok) return;
     try {
         stopPlayback?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         clearFx?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         clearRectSelection?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         clearCelSelection?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         clearGhostTargets?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         cancelLasso?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     for (let f = 0; f < totalFrames; f++) {
         clearFrameAllLayers(f);
     }
     for (let L = 0; L < LAYERS_COUNT; L++) {
         try {
             pruneUnusedSublayers(L);
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
     }
     currentFrame = 0;
     
@@ -1125,21 +1199,29 @@ async function clearAllProjectState() {
     if (hasTimeline) buildTimeline();
     try {
         gotoFrame?.(0);
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         queueRenderAll?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         queueUpdateHud?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
     try {
         markProjectDirty?.();
-    } catch {}
+    } catch {
+        // intentionally empty
+    }
 }
 
 /// MISC WIRING CODE
 
-function handleExportFunctionWiring() {
+function _handleExportFunctionWiring() {
     $("exportMP4")?.addEventListener("click", async () => {
         const mime = pickMP4Mime();
         if (!mime) {

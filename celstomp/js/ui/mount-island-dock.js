@@ -1,4 +1,4 @@
-function mountIslandDock() {
+function _mountIslandDock() {
   const island = document.getElementById("islandDock");
   if (!island) return;
   const header = document.getElementById("islandHeader");
@@ -37,16 +37,20 @@ function _applyIslandSavedPos(island) {
       const p = JSON.parse(raw);
       if (Number.isFinite(p.left)) island.style.left = `${p.left}px`;
       if (Number.isFinite(p.top)) island.style.top = `${p.top}px`;
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }
-function _saveIslandPos(island) {
+function __saveIslandPos(island) {
   try {
       const r = island.getBoundingClientRect();
       localStorage.setItem(ISLAND_POS_KEY, JSON.stringify({
           left: Math.round(r.left),
           top: Math.round(r.top)
       }));
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
 }
 function _wireIslandDrag(island, handle) {
   if (!island || !handle || handle._islandDragWired) return;
@@ -73,7 +77,9 @@ function _wireIslandDrag(island, handle) {
       island.classList.remove("dragging");
       try {
           handle.releasePointerCapture(pid);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       pid = null;
       saveIslandPos(island);
   };
@@ -89,7 +95,9 @@ function _wireIslandDrag(island, handle) {
       island.classList.add("dragging");
       try {
           handle.setPointerCapture(pid);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       e.preventDefault();
   }, {
       passive: false
@@ -125,7 +133,9 @@ function _wireIslandReset(island, btnReset) {
       e.preventDefault();
       try {
           localStorage.removeItem(ISLAND_POS_KEY);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       island.style.left = "18px";
       island.style.top = "calc(var(--header-h) + 28px)";
   });

@@ -1,0 +1,28 @@
+{
+  "env": { "browser": true, "es2022": true },
+  "parserOptions": { "ecmaVersion": 2022, "sourceType": "script" },
+  "rules": {
+    "no-undef": "off",
+    "no-unused-vars": "warn",
+    "no-redeclare": "error",
+    "no-dupe-keys": "error",
+    "no-duplicate-case": "error",
+    "no-unreachable": "error",
+    "no-constant-condition": "warn",
+    "no-empty": "warn",
+    "no-extra-semi": "error",
+    "no-unexpected-multiline": "error",
+    "no-sparse-arrays": "warn",
+    "no-fallthrough": "warn",
+    "no-useless-escape": "warn",
+    "no-self-compare": "error",
+    "no-compare-neg-zero": "error",
+    "no-unsafe-negation": "error",
+    "no-cond-assign": "error",
+    "no-dupe-args": "error",
+    "no-duplicate-case": "error",
+    "no-func-assign": "error",
+    "no-irregular-whitespace": "error",
+    "no-obj-calls": "error"
+  }
+}

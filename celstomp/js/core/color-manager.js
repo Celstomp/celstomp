@@ -1,9 +1,9 @@
-let currentColor = "#000000";
+let _currentColor = "#000000";
 
-const fillWhite = "#ffffff";
-const fillBrushTrailColor = "#ff1744";
+const _fillWhite = "#ffffff";
+const _fillBrushTrailColor = "#ff1744";
 
-let canvasBgColor = "#bfbfbf";
+let _canvasBgColor = "#bfbfbf";
 
 
 function colorToHex(c) {
@@ -58,11 +58,13 @@ function swatchColorKey(c) {
   try {
       const hex = colorToHex(c);
       if (hex && /^#[0-9A-F]{6}$/.test(hex)) return hex;
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   return c.toUpperCase();
 }
 
-function normalizeLayerSwatchKeys(layer) {
+function _normalizeLayerSwatchKeys(layer) {
   if (!layer) return;
   if (!layer.sublayers) layer.sublayers = new Map;
   if (!layer.suborder) layer.suborder = [];
@@ -118,7 +120,9 @@ function ensureCursorColorPicker() {
     if (_cursorColorPicker) {
         try {
             _cursorColorPicker.remove();
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
         _cursorColorPicker = null;
     }
     const inp = document.createElement("input");
@@ -154,25 +158,35 @@ function openColorPickerAtCursor(e, initialHex, onPick) {
   const norm = typeof normalizeToHex === "function" ? normalizeToHex(initialHex || "#000000") : initialHex || "#000000";
   try {
       picker.value = norm;
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   if (picker._pickCleanup) picker._pickCleanup();
   const onInput = () => {
       const v = picker.value || norm;
       try {
           onPick?.(v);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   };
   const onChange = () => {
       const v = picker.value || norm;
       try {
           onPick?.(v);
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           picker._pickCleanup?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           picker.blur?.();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   };
   picker.addEventListener("input", onInput, {
       passive: true
@@ -189,43 +203,57 @@ function openColorPickerAtCursor(e, initialHex, onPick) {
       picker.focus({
           preventScroll: true
       });
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   let opened = false;
   try {
       if (picker.showPicker) {
           picker.showPicker();
           opened = true;
       }
-  } catch {}
+  } catch {
+      // intentionally empty
+  }
   if (!opened) {
       try {
           picker.click();
           opened = true;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   }
   if (!opened) {
       try {
           picker.remove();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       _cursorColorPicker = null;
       const p2 = ensureCursorColorPicker();
       p2.style.left = x + "px";
       p2.style.top = y + "px";
       try {
           p2.value = norm;
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           p2.focus({
               preventScroll: true
           });
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
       try {
           p2.click();
-      } catch {}
+      } catch {
+          // intentionally empty
+      }
   }
 }
 
-function openColorPickerAtElement(anchorEl, initialHex, onPick) {
+function _openColorPickerAtElement(anchorEl, initialHex, onPick) {
   const r = anchorEl?.getBoundingClientRect?.();
   const fakeEvent = {
       clientX: r ? r.left + r.width / 2 : window.innerWidth / 2,
@@ -243,7 +271,7 @@ function normHex6(hex) {
   }
   return hex.toUpperCase();
 }
-function swatchHexToRgb(hex) {
+function _swatchHexToRgb(hex) {
   hex = normHex6(hex);
   if (!hex) return null;
   const n = parseInt(hex.slice(1), 16);
@@ -263,7 +291,7 @@ const _colorCtx = (() => {
 })();
 
 
-function hexToRgb(hex) {
+function _hexToRgb(hex) {
   const h = normalizeToHex(hex).slice(1);
   return {
       r: parseInt(h.slice(0, 2), 16),
@@ -271,10 +299,10 @@ function hexToRgb(hex) {
       b: parseInt(h.slice(4, 6), 16)
   };
 }
-function rgbToHex(r, g, b) {
+function _rgbToHex(r, g, b) {
   return ("#" + [ r, g, b ].map(v => Math.max(0, Math.min(255, v | 0)).toString(16).padStart(2, "0")).join("")).toUpperCase();
 }
-function hsvToRgb(h, s, v) {
+function _hsvToRgb(h, s, v) {
   h = (h % 360 + 360) % 360;
   s = clamp(s, 0, 1);
   v = clamp(v, 0, 1);
@@ -313,7 +341,7 @@ function hsvToRgb(h, s, v) {
       b: Math.round((bp + m) * 255)
   };
 }
-function rgbToHsv(r, g, b) {
+function _rgbToHsv(r, g, b) {
   r /= 255;
   g /= 255;
   b /= 255;

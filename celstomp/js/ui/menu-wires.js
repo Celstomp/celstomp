@@ -2,14 +2,14 @@
       menu helpers - wiring together open + close functionality (can be factored out, i assume)
   */
   // menu helper functions
-  function _openPopupAt(popup, x, y) {
+  function __openPopupAt(popup, x, y) {
     if (!popup) return;
     popup.style.left = `${x}px`;
     popup.style.top = `${y}px`;
     popup.setAttribute("aria-hidden", "false");
     popup.classList.add("open");
 }
-function _closePopup(popup) {
+function __closePopup(popup) {
     if (!popup) return;
     popup.setAttribute("aria-hidden", "true");
     popup.classList.remove("open");
@@ -45,12 +45,14 @@ function _openTopMenu(btn, panel) {
             first.focus({
                 preventScroll: true
             });
-        } catch {}
+        } catch {
+            // intentionally empty
+        }
     }
 }
 
 // syntactic sugar for: open and close
-function wireTopMenus() {
+function _wireTopMenus() {
     if (!topMenuBar || topMenuBar.dataset.wiredMenus === "1") return;
     topMenuBar.dataset.wiredMenus = "1";
     const triggerPairs = [ [ menuFileBtn, menuFilePanel ], [ menuEditBtn, menuEditPanel ], [ menuToolBehaviorBtn, menuToolBehaviorPanel ] ];

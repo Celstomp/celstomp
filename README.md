@@ -60,8 +60,8 @@ I come from an art background and built this while learning to code.
 Clone the repository:
 
 ```bash
-git clone https://github.com/ginyoa/celstomp_v1.git
-cd celstomp_v1
+git clone https://github.com/Celstomp/celstomp.git
+cd celstomp
 ```
 
 #### Using Vite (recommended)
@@ -106,6 +106,16 @@ The Python server will start at http://localhost:8000
 
 **Browser:** Chrome, Firefox, Safari, or Edge
 
+## Contributing
+
+Contributions are welcome! Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'Add my feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
+
 ## License
 
-See LICENSE file.
+This project is licensed under the [GNU General Public License v3.0](LICENSE).

@@ -19,7 +19,7 @@ We take the security of Celstomp seriously. If you believe you have found a secu
 
 Instead, please report security vulnerabilities by creating a private security advisory:
 
-1. Go to the [Security Advisories](https://github.com/ginyoa/celstomp_v1/security/advisories) page
+1. Go to the [Security Advisories](https://github.com/Celstomp/celstomp/security/advisories) page
 2. Click "New draft security advisory"
 3. Fill in the details about the vulnerability
 4. Submit the advisory

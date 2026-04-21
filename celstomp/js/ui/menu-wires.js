@@ -9,24 +9,29 @@
     popup.setAttribute("aria-hidden", "false");
     popup.classList.add("open");
 }
+/** Closes a popup element with optional animation and focus management. */
 function _closePopup(popup) {
     if (!popup) return;
     popup.setAttribute("aria-hidden", "true");
     popup.classList.remove("open");
 }
+/** Returns an array of focusable elements within a menu panel. */
 function _menuFocusableItems(panel) {
     if (!panel) return [];
     return Array.from(panel.querySelectorAll("button:not([disabled]), select, input[type='checkbox']")).filter(el => !el.hidden);
 }
+/** Closes a submenu panel and deactivates its trigger button. */
 function _closeSubmenu(triggerBtn, panel) {
     if (panel) panel.hidden = true;
     if (triggerBtn) triggerBtn.setAttribute("aria-expanded", "false");
 }
+/** Opens a submenu panel and activates its trigger button with focus management. */
 function _openSubmenu(triggerBtn, panel) {
     if (!panel || !triggerBtn) return;
     panel.hidden = false;
     triggerBtn.setAttribute("aria-expanded", "true");
 }
+/** Closes all top-level menu panels. */
 function _closeTopMenus() {
     [ [ menuFileBtn, menuFilePanel ], [ menuEditBtn, menuEditPanel ], [ menuToolBehaviorBtn, menuToolBehaviorPanel ] ].forEach(([btn, panel]) => {
         if (panel) panel.hidden = true;
@@ -34,6 +39,7 @@ function _closeTopMenus() {
     });
     [ [ menuExportBtn, menuExportPanel ], [ menuAutosaveBtn, menuAutosavePanel ] ].forEach(([btn, panel]) => _closeSubmenu(btn, panel));
 }
+/** Opens a top-level menu panel and closes any other open menus. */
 function _openTopMenu(btn, panel) {
     if (!btn || !panel) return;
     _closeTopMenus();
@@ -50,6 +56,7 @@ function _openTopMenu(btn, panel) {
 }
 
 // syntactic sugar for: open and close
+/** Initializes all top-level menu bar interactions: open/close, submenu navigation, and keyboard support. */
 function wireTopMenus() {
     if (!topMenuBar || topMenuBar.dataset.wiredMenus === "1") return;
     topMenuBar.dataset.wiredMenus = "1";

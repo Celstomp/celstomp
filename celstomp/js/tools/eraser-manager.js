@@ -1,5 +1,6 @@
 let _eraserCtxMenu = null;
 let _eraserCtxState = null;
+/** Creates and returns the eraser context menu DOM element with size controls. Caches the result for subsequent calls. */
 function ensureEraserCtxMenu() {
     if (_eraserCtxMenu) return _eraserCtxMenu;
     const m = document.createElement("div");
@@ -67,6 +68,7 @@ function ensureEraserCtxMenu() {
     _eraserCtxMenu = m;
     return m;
 }
+/** Opens the eraser context menu positioned near the click event, syncing size from current state. */
 function openEraserCtxMenu(ev, anchorEl) {
     try {
         closeBrushCtxMenu?.();
@@ -96,12 +98,14 @@ function openEraserCtxMenu(ev, anchorEl) {
         });
     } catch {}
 }
+/** Hides the eraser context menu and clears its state. */
 function closeEraserCtxMenu() {
     if (_eraserCtxMenu) _eraserCtxMenu.hidden = true;
     _eraserCtxState = null;
 }
 
 // wiring code for eraser
+/** Sets up right-click context menu on eraser tool buttons. Wires click-outside and Escape to close. */
 function wireEraserButtonRightClick() {
   if (document._eraserCtxWired) return;
   document._eraserCtxWired = true;

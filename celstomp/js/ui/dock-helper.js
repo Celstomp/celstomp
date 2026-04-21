@@ -1,3 +1,4 @@
+/** Initializes the color dock panel with drag-to-move, dock-right toggle, and minimize functionality. Clamps position within viewport bounds. */
 function dockDrag() {
     const dockToggle = $("dockToggleBtn");
     const dock = $("colorDock");

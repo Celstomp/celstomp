@@ -2,6 +2,7 @@ let _swatchCtxMenu = null;
 let _swatchCtxState = null;
 let _swatchColorPicker = null;
 
+/** Opens the swatch context menu for a layer/color swatch at the pointer event position. */
 function openSwatchContextMenu(L, key, ev) {
   try {
       ev.preventDefault();
@@ -32,17 +33,20 @@ function openSwatchContextMenu(L, key, ev) {
   m.style.top = `${y}px`;
 }
 
+/** Closes and removes the swatch context menu from the DOM. */
 function closeSwatchContextMenu() {
   if (_swatchCtxMenu) _swatchCtxMenu.hidden = true;
   _swatchCtxState = null;
 }
 
+/** Cancels an in-progress swatch recolor preview, restoring the original color. */
 function cancelSwatchPreview(layerId, key) {
   const job = _swatchPreviewJobs.get(_swPrevKey(layerId, key));
   if (!job) return;
   job.token++;
   job.pendingHex = null;
 }
+/** Schedules a recolor preview of the given swatch to the new hex color via requestAnimationFrame. */
 function queueSwatchRecolorPreview(layerId, key, hex) {
   const k = _swPrevKey(layerId, key);
   let job = _swatchPreviewJobs.get(k);
@@ -103,6 +107,7 @@ function queueSwatchRecolorPreview(layerId, key, hex) {
   })();
 }
 
+/** Applies the recolor operation to a swatch, updating all associated frame canvases with the new color. */
 async function applySwatchRecolor(layerId, key, newHex) {
   const L = layers?.[layerId];
   if (!L) return;
@@ -155,10 +160,12 @@ async function applySwatchRecolor(layerId, key, newHex) {
   } catch {}
 }
 const _swatchPreviewJobs = new Map;
+/** Returns a unique cache key for a swatch preview operation on the given layer and color key. */
 function _swPrevKey(layerId, key) {
   return `${layerId}::${key}`;
 }
 
+/** Creates and returns the shared swatch context menu DOM element with rename, delete, and recolor options. */
 function ensureSwatchCtxMenu() {
   if (_swatchCtxMenu) return _swatchCtxMenu;
   const m = document.createElement("div");
@@ -206,6 +213,7 @@ function ensureSwatchCtxMenu() {
   return m;
 }
 
+/** Starts a one-shot live color picker from the canvas, calling onLive during drag and onCommit/onCancel on release. */
 function pickColorLiveOnce(startHex, {onLive: onLive, onCommit: onCommit, onCancel: onCancel} = {}) {
   const inp = document.createElement("input");
   inp.type = "color";
@@ -267,6 +275,7 @@ function pickColorLiveOnce(startHex, {onLive: onLive, onCommit: onCommit, onCanc
   inp.click();
 }
 
+/** Sets the hex color of a specific swatch, updating the UI and underlying data. */
 function setSwatchHex(L, key, newHex) {
   const sw = getSwatchObj(L, key);
   if (!sw) return;
@@ -276,6 +285,7 @@ function setSwatchHex(L, key, newHex) {
   return setSwatchObjKeyIfNeeded(L, key, newHex);
 }
 
+/** Extracts the OffscreenCanvas or HTMLCanvasElement from a wrapper object, handling both direct and wrapped canvas references. */
 function extractCanvas(v) {
   if (!v) return null;
   if (v instanceof HTMLCanvasElement) return v;
@@ -283,6 +293,7 @@ function extractCanvas(v) {
   if (v.ctx && v.ctx.canvas instanceof HTMLCanvasElement) return v.ctx.canvas;
   return null;
 }
+/** Iterates over all canvas values in a container (Map or array), invoking the callback for each. */
 function iterContainerValues(container, fn) {
   if (!container) return;
   if (container instanceof Map) {
@@ -298,6 +309,7 @@ function iterContainerValues(container, fn) {
   }
 }
 
+/** Updates the key of a swatch object in its layer when the color hex changes, preserving order and data. */
 function setSwatchObjKeyIfNeeded(layer, oldKey, newKey) {
   const col = getSwatchCollection(layer);
   if (!col) return oldKey;
@@ -342,13 +354,16 @@ function setSwatchObjKeyIfNeeded(layer, oldKey, newKey) {
   return newKey;
 }
 
+/** Returns true if the string is a valid 6-digit hex color (with or without # prefix). */
 function isHexColor(s) {
   return typeof s === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s.trim());
 }
 
+/** Returns the sublayers Map for the given layer index. */
 function getSwatchCollection(L) {
   return L?.swatches || L?.sublayers || L?.subLayers || L?.colors || L?.colorSwatches || null;
 }
+/** Returns the swatch sublayer object for the given layer and color key. */
 function getSwatchObj(L, key) {
   const col = getSwatchCollection(L);
   if (!col) return null;
@@ -357,6 +372,7 @@ function getSwatchObj(L, key) {
   return null;
 }
 
+/** Recolors all non-transparent pixels in a canvas to the given RGB color, preserving alpha. */
 function recolorCanvasAllNonTransparent(canvas, rgb) {
   const w = canvas.width | 0, h = canvas.height | 0;
   if (!w || !h) return;
@@ -376,6 +392,7 @@ function recolorCanvasAllNonTransparent(canvas, rgb) {
   ctx.putImageData(img, 0, 0);
 } 
 
+/** Collects all frame canvas elements that match a specific layer and color key for batch operations. */
 function collectCanvasesForLayerSwatch(L, key) {
   const out = [];
   const seen = new Set;
@@ -418,6 +435,7 @@ function collectCanvasesForLayerSwatch(L, key) {
   return out;
 }
 
+/** Sets up pointer-based drag-and-drop for swatches within and between layer rows, including reordering and layer transfer. */
 function wireSwatchPointerDnD(host) {
   if (!host || host._swatchPtrDnDWired) return;
   host._swatchPtrDnDWired = true;
@@ -603,6 +621,7 @@ function wireSwatchPointerDnD(host) {
 
 let _paperColorPicker = null;
 
+/** Reads the current DOM order of swatch elements and updates the layer suborder array to match. */
 function commitSwatchOrderFromDOM(host, L) {
     const layer = layers?.[L];
     if (!layer) return;
@@ -633,6 +652,7 @@ function commitSwatchOrderFromDOM(host, L) {
     queueRenderAll();
 }
 let _swatchPtrDrag = null;
+/** Returns the layer index associated with a swatch host element, parsed from its data attribute. */
 function _swatchHostLayer(host) {
     const id = host?.id || "";
     if (id === "swatches-sketch") return LAYER.SKETCH;
@@ -645,6 +665,7 @@ function _swatchHostLayer(host) {
 
 let _swatchDnD = null;
 
+/** Pairs a swatch from one layer with a swatch on another layer for synchronized editing. */
 function pairSwatchAcrossLayers(srcL, srcKey, dstL, dstParentKey) {
     if (srcL == null || dstL == null) return false;
     if (!srcKey || !dstParentKey) return false;
@@ -691,6 +712,7 @@ function getSwatchObj(layer, key) {
         return null;
     }
 }
+/** Removes parent-child pairing from a swatch if it has one within the same layer. */
 function detachFromParentIfAnyInLayer(layer, swKey) {
     const sw = getSwatchObj(layer, swKey);
     if (!sw || !sw.parentKey) return;
@@ -701,6 +723,7 @@ function detachFromParentIfAnyInLayer(layer, swKey) {
     delete sw.parentKey;
 }
 
+/** Moves a swatch from one layer to another, re-rendering both layers after the transfer. */
 function moveSwatchToLayerUnpaired(srcL, srcKey, dstL) {
     const srcLayer = layers[srcL];
     const dstLayer = layers[dstL];
@@ -762,16 +785,19 @@ function moveSwatchToLayerUnpaired(srcL, srcKey, dstL) {
     return true;
 }
 
+/** Saves the current active sub color to the layer color memory array if it differs. */
 function rememberLayerColorSafe() {
   try {
       rememberCurrentColorForLayer?.(activeLayer);
   } catch {}
 }
 
+/** Updates the HSV preview box display with the current color value. */
 function setHSVPreviewBox() {
   $("hsvWheelPreview").style.background = currentColor ?? "#000000";
 }
 
+/** Sets the current active drawing color to the given hex value, optionally remembering it for layer color memory. */
 function setCurrentColorHex(hex, {remember: remember = true} = {}) {
   currentColor = normalizeToHex(hex);
   setColorSwatch();
@@ -780,6 +806,7 @@ function setCurrentColorHex(hex, {remember: remember = true} = {}) {
   hsvPick = rgbToHsv(...Object.values(hexToRgb(currentColor)));
   drawHSVWheel();
 }
+/** Resets the color picker to black and sets the current color to #000000. */
 function setPickerDefaultBlack() {
   setCurrentColorHex("#000000", {
       remember: true
@@ -796,6 +823,7 @@ const PALETTE_KEY = "celstomp_palette_v1";
             H: 180
         };
 
+/** Loads the saved color palette from localStorage and populates the palette UI. */
 function loadPalette() {
   try {
       const raw = localStorage.getItem(PALETTE_KEY);
@@ -805,6 +833,7 @@ function loadPalette() {
       colorPalette = [];
   }
 }
+/** Saves the current color palette state to localStorage. */
 function savePalette() {
   try {
       localStorage.setItem(PALETTE_KEY, JSON.stringify(colorPalette.slice(0, 48)));

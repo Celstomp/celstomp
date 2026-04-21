@@ -1,5 +1,6 @@
 
 
+/** Initializes touch event guards to prevent native browser zoom/scroll during drawing on mobile. */
 function initMobileNativeZoomGuard() {
   const stage = document.getElementById("stage");
   if (!stage || stage._nativeZoomGuard) return;
@@ -32,6 +33,7 @@ function initMobileNativeZoomGuard() {
 // PRIVATE FUNCS //
 ///////////////////
 
+/** Wires canvas pointer events with mobile-specific handling for palm rejection and gesture discrimination. */
 function _wireCanvasPointerDrawingMobileSafe() {
   const stageEl = typeof stage !== "undefined" && stage || document.getElementById("stage");
   const canvasEl = typeof drawCanvas !== "undefined" && drawCanvas || document.getElementById("drawCanvas") || document.querySelector("canvas");
@@ -189,6 +191,7 @@ function _wireCanvasPointerDrawingMobileSafe() {
 
 const _touchPointers = new Map;
 let _touchGestureActive = false;
+/** Updates the current touch gesture classification (draw, pan, pinch-zoom) based on active touch points. */
 function _updateTouchGestureState() {
     const was = _touchGestureActive;
     _touchGestureActive = _touchPointers.size >= 2;

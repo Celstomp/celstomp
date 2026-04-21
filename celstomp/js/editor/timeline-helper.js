@@ -31,6 +31,7 @@ const clipEndMarker = $("clipEndMarker");
 
 const hasTimeline = !!(timelineTable && timelineScroll && playheadMarker && clipStartMarker && clipEndMarker);
 
+/** Rebuilds the timeline frame arrays when fps or duration changes, preserving existing cel data. */
 function buildTimeline() {
   totalFrames = fps * seconds;
   for (const layer of layers) {
@@ -89,6 +90,7 @@ function buildTimeline() {
   updatePlayheadMarker();
   updateClipMarkers();
 }
+/** Highlights the current frame cell in the timeline UI. */
 function highlightTimelineCell() {
   const tr = $("timelineTable").querySelector("tr.anim-row");
   if (!tr) return;
@@ -104,11 +106,13 @@ function highlightTimelineCell() {
   if (ph) ph.textContent = `Playhead — ${sfString(currentFrame)}`;
 }
 
+/** Formats a frame index as a human-readable string (e.g., "F12"). */
 function sfString(f) {
   const o = framesToSF(f);
   return `${o.s}s+${o.f}f`;
 }
 
+/** Converts a frame index to a seconds-frames display string. */
 function framesToSF(f) {
   return {
       s: Math.floor(f / fps),
@@ -116,6 +120,7 @@ function framesToSF(f) {
   };
 }
 
+/** Updates the has-content indicator for the specified frame in the timeline UI. */
 function updateTimelineHasContent(F) {
   const tr = $("timelineTable").querySelector("tr.anim-row");
   if (!tr) return;
@@ -123,6 +128,7 @@ function updateTimelineHasContent(F) {
   if (!td) return;
   td.classList.toggle("hasContent", hasCel(F));
 }
+/** Refreshes has-content indicators for all frames across all layers. */
 function refreshTimelineRowHasContentAll() {
   const tr = $("timelineTable").querySelector("tr.anim-row");
   if (!tr) return;
@@ -134,6 +140,7 @@ function refreshTimelineRowHasContentAll() {
       highlightTimelineCell?.();
   } catch {}
 }
+/** Returns a fallback swatch color key for a layer when no active sub color is set. */
 function fallbackSwatchKeyForLayer(L) {
   if (L == null || L === PAPER_LAYER) return null;
   const layer = layers?.[L];
@@ -148,6 +155,7 @@ function fallbackSwatchKeyForLayer(L) {
   } catch {}
   return "#000000";
 }
+/** Migrates undo/redo history entries when a swatch is moved between layers. */
 function migrateHistoryForSwatchMove(srcL, dstL, key) {
   if (!historyMap || srcL == null || dstL == null) return;
   const srcK = typeof resolveKeyFor === "function" ? resolveKeyFor(srcL, key) : key;
@@ -167,6 +175,7 @@ function migrateHistoryForSwatchMove(srcL, dstL, key) {
       historyMap.delete(from);
   }
 }
+/** Repositions the playhead marker element to align with the current frame. */
 function updatePlayheadMarker() {
   const playRow = $("timelineTable").querySelector("tr.playhead-row");
   if (!playRow) return;
@@ -177,6 +186,7 @@ function updatePlayheadMarker() {
   const leftInScroll = cellRect.left - scrollRect.left + $("timelineScroll").scrollLeft;
   $("playheadMarker").style.left = Math.round(leftInScroll) + "px";
 }
+/** Returns the left pixel offset of a frame cell in the timeline scroll container. */
 function edgeLeftPxOfFrame(frameIndex) {
   const playRow = $("timelineTable").querySelector("tr.playhead-row");
   const cell = playRow?.children[frameIndex + 1];
@@ -185,10 +195,12 @@ function edgeLeftPxOfFrame(frameIndex) {
   const scrollRect = $("timelineScroll").getBoundingClientRect();
   return cellRect.left - scrollRect.left + $("timelineScroll").scrollLeft;
 }
+/** Updates the clip start and end marker positions in the timeline. */
 function updateClipMarkers() {
   $("clipStartMarker").style.left = Math.round(edgeLeftPxOfFrame(clipStart)) + "px";
   $("clipEndMarker").style.left = Math.round(edgeLeftPxOfFrame(clipEnd)) + "px";
 }
+/** Snaps a frame position from the given start frame by the snap interval. */
 function applySnapFrom(start, i) {
   if (snapFrames > 0) {
       const delta = i - start;
@@ -196,10 +208,12 @@ function applySnapFrom(start, i) {
   }
   return clamp(i, 0, totalFrames - 1);
 }
+/** Steps forward or backward by the snap frame interval. */
 function stepBySnap(delta) {
   if (snapFrames > 0) return clamp(currentFrame + delta * snapFrames, 0, totalFrames - 1);
   return clamp(currentFrame + delta, 0, totalFrames - 1);
 }
+/** Navigates to the specified frame, updating the playhead and triggering a re-render. */
 function gotoFrame(i) {
   currentFrame = clamp(i, 0, totalFrames - 1);
   queueUpdateHud();
@@ -217,6 +231,7 @@ function gotoFrame(i) {
   }
 }
 
+/** Captures a snapshot of all layer canvases for a given frame as a bundle object. */
 function captureFrameBundle(F) {
   const bundle = new Array(LAYERS_COUNT);
   for (let L = 0; L < LAYERS_COUNT; L++) {
@@ -234,6 +249,7 @@ function captureFrameBundle(F) {
   return bundle;
 }
 
+/** Creates a deep copy of a canvas element with identical pixel content. */
 function cloneCanvasDeep(src) {
   if (!src) return null;
   const c = document.createElement("canvas");
@@ -245,6 +261,7 @@ function cloneCanvasDeep(src) {
   return c;
 }
 
+/** Deep-clones a frame bundle, creating independent canvas copies for each layer. */
 function cloneFrameBundleDeep(bundle) {
   const out = new Array(LAYERS_COUNT);
   for (let L = 0; L < LAYERS_COUNT; L++) {
@@ -257,6 +274,7 @@ function cloneFrameBundleDeep(bundle) {
   }
   return out;
 }
+/** Pastes a previously captured frame bundle onto the specified frame, overwriting existing content. */
 function pasteFrameBundle(F, bundle) {
   clearFrameAllLayers(F);
   for (let L = 0; L < LAYERS_COUNT; L++) {
@@ -268,6 +286,7 @@ function pasteFrameBundle(F, bundle) {
       }
   }
 }
+/** Moves all layer content from one frame index to another. */
 function moveFrameAllLayers(fromF, toF) {
   if (fromF === toF) return;
   clearFrameAllLayers(toF);
@@ -283,6 +302,7 @@ function moveFrameAllLayers(fromF, toF) {
       }
   }
 }
+/** Duplicates cel content from srcF to dstF across all layers. */
 function duplicateCelFrames(srcF, dstF) {
   if (srcF < 0 || dstF < 0 || srcF === dstF) return false;
   if (!hasCel(srcF)) return false;
@@ -297,6 +317,7 @@ function duplicateCelFrames(srcF, dstF) {
   } catch {}
   return true;
 }
+/** Handler for the duplicate cel UI action. */
 function onDuplicateCel() {
   const F = currentFrame;
   if (hasCel(F)) {
@@ -315,10 +336,12 @@ function onDuplicateCel() {
       duplicateCelFrames(left, F);
   }
 }
+/** Navigates to the previous frame that has cel content. */
 function gotoPrevCel() {
   const p = nearestPrevCelIndex(currentFrame > 0 ? currentFrame : 0);
   if (p >= 0) gotoFrame(p);
 }
+/** Navigates to the next frame that has cel content. */
 function gotoNextCel() {
   const n = nearestNextCelIndex(currentFrame);
   if (n >= 0) gotoFrame(n);
@@ -328,11 +351,13 @@ let selectingCels = false;
 let selAnchor = -1;
 let selLast = -1;
 let ghostTargets = new Set;
+/** Clears all ghost target indicators from the timeline. */
 function clearGhostTargets() {
   if (!ghostTargets.size) return;
   ghostTargets.clear();
   highlightTimelineCell();
 }
+/** Computes valid ghost drop destinations for a drag operation starting at the given frame. */
 function computeGhostDestsForStart(startFrame) {
   const frames = selectedSorted();
   if (!frames.length) return [];
@@ -344,20 +369,24 @@ function computeGhostDestsForStart(startFrame) {
   if (maxDest > totalFrames - 1) shift -= maxDest - (totalFrames - 1);
   return frames.map(f => f + shift);
 }
+/** Sets the ghost target indicators for a cel drag operation. */
 function setGhostTargetsForStart(startFrame) {
   const dests = computeGhostDestsForStart(startFrame);
   ghostTargets = new Set(dests);
   highlightTimelineCell();
 }
+/** Sets a single ghost target indicator at the specified frame. */
 function setGhostTargetSingle(frame) {
   ghostTargets = new Set([ frame ]);
   highlightTimelineCell();
 }
 let groupDragActive = false;
 let groupDropStart = -1;
+/** Returns a sorted array of currently selected frame indices. */
 function selectedSorted() {
   return Array.from(selectedCels).sort((a, b) => a - b);
 }
+/** Removes invalid frame indices from the current selection. */
 function pruneSelection() {
   if (!selectedCels.size) return;
   const next = new Set;
@@ -366,18 +395,21 @@ function pruneSelection() {
   }
   selectedCels = next;
 }
+/** Clears the cel selection state and removes visual indicators. */
 function clearCelSelection() {
   selectedCels.clear();
   selAnchor = -1;
   selLast = -1;
   highlightTimelineCell();
 }
+/** Sets the selection to a single frame. */
 function setSingleSelection(f) {
   selectedCels = new Set(hasCel(f) ? [ f ] : []);
   selAnchor = f;
   selLast = f;
   highlightTimelineCell();
 }
+/** Sets the selection to a continuous range of frames from a to b. */
 function setSelectionRange(a, b) {
   const lo = Math.min(a, b);
   const hi = Math.max(a, b);
@@ -388,6 +420,7 @@ function setSelectionRange(a, b) {
   selectedCels = next;
   highlightTimelineCell();
 }
+/** Clears all layer content for the specified frame. */
 function clearFrameAllLayers(F) {
   for (let L = 0; L < LAYERS_COUNT; L++) {
       const layer = layers[L];
@@ -400,6 +433,7 @@ function clearFrameAllLayers(F) {
       }
   }
 }
+/** Returns the cel bundle (canvas data) for the given frame across all layers. */
 function getCelBundle(F) {
   const bundle = new Array(LAYERS_COUNT);
   for (let L = 0; L < LAYERS_COUNT; L++) {
@@ -416,6 +450,7 @@ function getCelBundle(F) {
   }
   return bundle;
 }
+/** Restores cel content from a bundle onto the specified frame. */
 function setCelBundle(F, bundle) {
   clearFrameAllLayers(F);
   for (let L = 0; L < LAYERS_COUNT; L++) {
@@ -427,6 +462,7 @@ function setCelBundle(F, bundle) {
       }
   }
 }
+/** Moves cel content from one frame to another. */
 function moveCelBundle(fromF, toF) {
   if (fromF === toF) return;
   const b = getCelBundle(fromF);
@@ -434,6 +470,7 @@ function moveCelBundle(fromF, toF) {
   clearFrameAllLayers(fromF);
 }
 
+/** Returns true if the specified frame has any cel content across layers. */
 function hasCel(F) {
   return MAIN_LAYERS.some(L => mainLayerHasContent(L, F));
 }

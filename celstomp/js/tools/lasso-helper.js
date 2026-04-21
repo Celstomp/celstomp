@@ -4,12 +4,14 @@ const lassoMinDist = 2.5;
 let _lassoPreviewScheduled = false;
 let _lassoLastPreviewMode = "fill";
 
+/** Adds a point to the lasso path if it is far enough from the last point (minimum distance threshold). */
 function addLassoPoint(pt) {
     const last = lassoPts[lassoPts.length - 1];
     if (!last || Math.hypot(pt.x - last.x, pt.y - last.y) >= lassoMinDist) {
         lassoPts.push(pt);
     }
 }
+/** Schedules a single requestAnimationFrame callback to draw the lasso preview, deduplicating rapid calls. */
 function scheduleLassoPreview(mode = "fill") {
     _lassoLastPreviewMode = mode;
     if (_lassoPreviewScheduled) return;
@@ -19,9 +21,11 @@ function scheduleLassoPreview(mode = "fill") {
         drawLassoPreviewImmediate(_lassoLastPreviewMode);
     });
 }
+/** Schedules a lasso preview render via requestAnimationFrame. Delegates to scheduleLassoPreview. */
 function drawLassoPreview(mode = "fill") {
     scheduleLassoPreview(mode);
 }
+/** Renders the lasso selection preview on the FX canvas with optional fill and colored outline. */
 function drawLassoPreviewImmediate(mode = "fill") {
     const fxctx = getCanvas(CANVAS_TYPE.fxCanvas).getContext("2d");
     queueClearFx();
@@ -50,6 +54,7 @@ function drawLassoPreviewImmediate(mode = "fill") {
 
 let _lassoMaskC = null;
 let _lassoColorC = null;
+/** Creates or resizes a temporary canvas to the given dimensions and clears it. */
 function ensureTmpCanvas(c, w, h) {
     if (!c) c = document.createElement("canvas");
     if (c.width !== w) c.width = w;
@@ -59,6 +64,7 @@ function ensureTmpCanvas(c, w, h) {
     ctx.clearRect(0, 0, w, h);
     return [ c, ctx ];
 }
+/** Fills the lasso-selected region with the current color on the active layer/frame. Handles anti-aliased and aliased modes. */
 function applyLassoFill() {
     const hex = colorToHex(currentColor);
     pushUndo(activeLayer, currentFrame, hex);
@@ -121,6 +127,7 @@ function applyLassoFill() {
     updateTimelineHasContent(currentFrame);
     return true;
 }
+/** Erases the lasso-selected region from the active sublayer using destination-out compositing. */
 function applyLassoErase() {
     if (activeLayer === PAPER_LAYER) return false;
     if (lassoPts.length < 3) return false;
@@ -181,6 +188,7 @@ function applyLassoErase() {
     return true;
 }
 
+/** Scans the frame canvas pixel data to determine if any non-transparent pixels exist, updating _hasContent. */
 function recomputeHasContent(L, F, key) {
   try {
       const k = resolveKeyFor(L, key);
@@ -204,6 +212,7 @@ function recomputeHasContent(L, F, key) {
   }
 }
 
+/** Cancels the active lasso selection, clearing points and the FX preview. */
 function cancelLasso() {
     lassoActive = false;
     lassoPts = [];

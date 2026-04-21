@@ -1,3 +1,4 @@
+/** Mounts the island dock UI element, initializing drag, collapse, reset, and tool icon features. */
 function mountIslandDock() {
   const island = document.getElementById("islandDock");
   if (!island) return;
@@ -30,6 +31,7 @@ const ISLAND_POS_KEY = "celstomp.island.pos";
 // PRIVATE FUNCS //
 ///////////////////
 
+/** Restores a floating island element to its last saved position from localStorage. */
 function _applyIslandSavedPos(island) {
   try {
       const raw = localStorage.getItem(ISLAND_POS_KEY);
@@ -39,6 +41,7 @@ function _applyIslandSavedPos(island) {
       if (Number.isFinite(p.top)) island.style.top = `${p.top}px`;
   } catch {}
 }
+/** Persists the current position of a floating island to localStorage. */
 function _saveIslandPos(island) {
   try {
       const r = island.getBoundingClientRect();
@@ -48,6 +51,7 @@ function _saveIslandPos(island) {
       }));
   } catch {}
 }
+/** Sets up mouse-based drag-to-move behavior on a floating island element. */
 function _wireIslandDrag(island, handle) {
   if (!island || !handle || handle._islandDragWired) return;
   handle._islandDragWired = true;
@@ -104,6 +108,7 @@ function _wireIslandDrag(island, handle) {
       passive: false
   });
 }
+/** Wires the collapse/expand toggle for an island panel. */
 function _wireIslandCollapse(island, tab, btnCollapse) {
   if (!island || island._islandCollapseWired) return;
   island._islandCollapseWired = true;
@@ -120,6 +125,7 @@ function _wireIslandCollapse(island, tab, btnCollapse) {
       setCollapsed(false);
   });
 }
+/** Wires a reset button to restore an island to its default docked position. */
 function _wireIslandReset(island, btnReset) {
   btnReset?.addEventListener("click", e => {
       e.preventDefault();
@@ -130,6 +136,7 @@ function _wireIslandReset(island, btnReset) {
       island.style.top = "calc(var(--header-h) + 28px)";
   });
 }
+/** Wires tool icon click handlers within the tool segment of an island. */
 function _wireIslandIcons(toolSegEl) {
   if (!toolSegEl || toolSegEl._islandIconsWired) return;
   toolSegEl._islandIconsWired = true;

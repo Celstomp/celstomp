@@ -1,5 +1,6 @@
 // island: floating window which can be dragged around
 
+/** Mounts slot-based island UI containers into the layout, initializing their content areas. */
 function mountIslandSlots() {
   const island = $("floatingIsland");
   const wheelSlot = $("islandWheelSlot");
@@ -39,6 +40,7 @@ function mountIslandSlots() {
   } catch {}
 }
 
+/** Initializes the island minimize/tab toggle for collapsing and expanding floating panels. */
 function initIslandMinimizeTab() {
   const island = $("floatingIsland");
   const collapseBtn = $("islandCollapseBtn");
@@ -98,6 +100,7 @@ function initIslandMinimizeTab() {
   }
 }
 
+/** Initializes a side panel island with collapse, resize, and content slot features. */
 function initIslandSidePanel() {
   const island = $("floatingIsland");
   if (!island) return;
@@ -168,6 +171,7 @@ function initIslandSidePanel() {
   });
 }
 
+/** Wires drag-to-move behavior on a floating island panel with viewport clamping. */
 function wireFloatingIslandDrag() {
   const dock = $("floatingIsland") || document.querySelector(".islandDock");
   if (!dock) return;
@@ -314,6 +318,7 @@ function wireFloatingIslandDrag() {
 
 let _islandLayerAutoFit = null;
         
+/** Sets up auto-fit behavior that adjusts island layout when the active layer changes. */
 function initIslandLayerAutoFit() {
     if (_islandLayerAutoFit) return;
     const st = {
@@ -397,6 +402,7 @@ function initIslandLayerAutoFit() {
     _islandLayerAutoFit = st;
 }
 
+/** Wires resize handles on an island panel, allowing edge and corner resizing. */
 function wireIslandResize() {
   const dock = document.querySelector(".islandDock") || $("floatingIsland");
   if (!dock || dock._islandResizeWired) return;

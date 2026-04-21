@@ -19,6 +19,7 @@ const autosaveController = window.CelstompAutosave?.createController?.({
   }
 }) || null;
 
+/** Returns all offscreen canvases with content for a specific main layer and frame. */
 function canvasesWithContentForMainLayerFrame(L, F) {
   const layer = layers[L];
   if (!layer) return [];
@@ -36,6 +37,7 @@ function canvasesWithContentForMainLayerFrame(L, F) {
   return out;
 }
 
+/** Renders the complete composite of frame i onto the given 2D context, with optional transparency and background. */
 async function drawFrameTo(ctx, i, opts = {}) {
   const forceHoldOff = !!opts.forceHoldOff;
   const transparent = !!opts.transparent;
@@ -57,12 +59,14 @@ async function drawFrameTo(ctx, i, opts = {}) {
   }
 }
 
+/** Returns the best supported MP4 MIME type for video export, or null if unsupported. */
 function pickMP4Mime() {
   const options = [ "video/mp4;codecs=h264", "video/mp4;codecs=avc1", "video/mp4" ];
   for (const m of options) if (MediaRecorder.isTypeSupported(m)) return m;
   return null;
 }
 
+/** Executes a callback with transparency hold temporarily disabled, restoring state after. */
 async function withTransparencyHoldForcedOffAsync(fn) {
   const prev = !!transparencyHoldEnabled;
   transparencyHoldEnabled = false;
@@ -72,6 +76,7 @@ async function withTransparencyHoldForcedOffAsync(fn) {
       transparencyHoldEnabled = prev;
   }
 }
+/** Exports the current clip as a video or animated image in the specified format. */
 async function exportClip(mime, ext) {
   const cc = document.createElement("canvas");
   cc.width = contentW;
@@ -117,6 +122,7 @@ async function exportClip(mime, ext) {
 ////////////////
 
 
+/** Builds an optimized color palette for GIF export, sampling unique colors from all frames. */
 function buildGifPalette(quality = "high") {
   const q = (quality || "high").toLowerCase();
   const levels = q === "low" ? 4 : q === "medium" ? 5 : 6;
@@ -140,6 +146,7 @@ function buildGifPalette(quality = "high") {
       step: step
   };
 }
+/** Maps an RGBA color to the nearest palette index for GIF quantization. */
 function rgbaToGifIndex(r, g, b, paletteInfo) {
   const levels = Math.max(2, Number(paletteInfo?.levels) || 6);
   const step = Number(paletteInfo?.step) || 51;
@@ -148,6 +155,7 @@ function rgbaToGifIndex(r, g, b, paletteInfo) {
   const bi = Math.max(0, Math.min(levels - 1, Math.round(b / step)));
   return 1 + ri * levels * levels + gi * levels + bi;
 }
+/** Converts raw ImageData to GIF palette indexes, handling transparency. */
 function imageDataToGifIndexes(data, transparent, paletteInfo) {
   const out = new Uint8Array(data.length / 4);
   for (let i = 0, p = 0; i < data.length; i += 4, p++) {
@@ -160,6 +168,7 @@ function imageDataToGifIndexes(data, transparent, paletteInfo) {
   }
   return out;
 }
+/** Exports the current clip as an animated GIF with configurable quality, dithering, and loop settings. */
 async function exportGif({
   fps: fpsLocal,
   transparent: transparent,
@@ -250,6 +259,7 @@ async function exportGif({
   URL.revokeObjectURL(url);
 }
 
+/** Returns an accessor object for reading and writing the paper/background canvas state. */
 function getPaperAccessor() {
   if (typeof paperEnabled !== "undefined") {
       return {
@@ -308,6 +318,7 @@ function getPaperAccessor() {
   } catch {}
   return null;
 }
+/** Temporarily applies export-specific overrides (canvas size, background) during an async operation. */
 async function withExportOverridesAsync(fn) {
   const prevHold = transparencyHoldEnabled;
   const paperAcc = getPaperAccessor();
@@ -337,6 +348,7 @@ const imgSeqExporter = window.CelstompImgSeqExport?.createExporter?.({
   clamp: clamp,
   sleep: sleep
 }) || null;
+/** Converts a Blob to a data URL string using FileReader. */
 function blobToDataURL(blob) {
   return new Promise((resolve, reject) => {
       const r = new FileReader;
@@ -345,6 +357,7 @@ function blobToDataURL(blob) {
       r.readAsDataURL(blob);
   });
 }
+/** Renders a canvas to a PNG data URL string. */
 async function canvasToPngDataURL(c) {
   if (!c) return null;
   if (typeof c.toDataURL === "function") {
@@ -360,6 +373,7 @@ async function canvasToPngDataURL(c) {
   }
   return null;
 }
+/** Returns true if the canvas contains any semi-transparent or transparent pixels. */
 function canvasHasAnyAlpha(c) {
   try {
       const ctx = c.getContext("2d", {
@@ -370,6 +384,7 @@ function canvasHasAnyAlpha(c) {
   } catch {}
   return false;
 }
+/** Returns a stable-order array with duplicate elements removed. */
 function uniqStable(arr) {
   const seen = new Set;
   const out = [];
@@ -383,6 +398,7 @@ function uniqStable(arr) {
 }
 const AUTOSAVE_ENABLED_KEY = "celstomp.autosave.enabled.v1";
 const AUTOSAVE_INTERVAL_MIN_KEY = "celstomp.autosave.interval.min.v1";
+/** Reads the autosave enabled preference from localStorage. */
 function readAutosaveEnabledSetting() {
   try {
       const raw = localStorage.getItem(AUTOSAVE_ENABLED_KEY);
@@ -391,6 +407,7 @@ function readAutosaveEnabledSetting() {
   } catch {}
   return false;
 }
+/** Reads the autosave interval in minutes from localStorage. */
 function readAutosaveIntervalMinutesSetting() {
   try {
       const raw = Number(localStorage.getItem(AUTOSAVE_INTERVAL_MIN_KEY) || 1);
@@ -398,17 +415,20 @@ function readAutosaveIntervalMinutesSetting() {
   } catch {}
   return 1;
 }
+/** Persists the autosave enabled preference to localStorage. */
 function writeAutosaveEnabledSetting(v) {
   try {
       localStorage.setItem(AUTOSAVE_ENABLED_KEY, v ? "1" : "0");
   } catch {}
 }
+/** Persists the autosave interval setting to localStorage. */
 function writeAutosaveIntervalMinutesSetting(v) {
   try {
       localStorage.setItem(AUTOSAVE_INTERVAL_MIN_KEY, String(clamp(Math.round(v), 1, 120)));
   } catch {}
 }
 
+/** Synchronizes the autosave toggle and interval UI controls with current settings. */
 function syncAutosaveUiState() {
   const enabled = autosaveController?.isEnabled?.() ?? autosaveEnabled;
   const minutes = Math.max(1, Math.round((autosaveController?.getIntervalMs?.() ?? autosaveIntervalMinutes * 60000) / 60000));
@@ -432,6 +452,7 @@ function syncAutosaveUiState() {
   writeAutosaveEnabledSetting(autosaveEnabled);
   writeAutosaveIntervalMinutesSetting(autosaveIntervalMinutes);
 }
+/** Updates the save state indicator badge with text and optional tone (saved, dirty, saving). */
 function setSaveStateBadge(text, tone = "") {
   const saveStateBadgeEl = $("saveStateBadge");
 
@@ -444,14 +465,17 @@ function setSaveStateBadge(text, tone = "") {
   saveStateBadgeEl.classList.remove("dirty", "saving", "error");
   if (tone) saveStateBadgeEl.classList.add(tone);
 }
+/** Marks the project as having unsaved changes and updates the save state badge. */
 function markProjectDirty() {
   if (autosaveController) return autosaveController.markDirty();
   setSaveStateBadge("Unsaved", "dirty");
 }
+/** Marks the project as saved with no pending changes. */
 function markProjectClean(text = "Saved") {
   if (autosaveController) return autosaveController.markClean(text);
   setSaveStateBadge(text, "");
 }
+/** Records the timestamp of the last manual save operation. */
 function setLastManualSaveAt(ts = Date.now()) {
   if (autosaveController) return autosaveController.setManualSaveAt(ts);
   try {
@@ -460,24 +484,29 @@ function setLastManualSaveAt(ts = Date.now()) {
       }));
   } catch {}
 }
+/** Returns the current autosave payload object for storage. */
 function getAutosavePayload() {
   if (autosaveController) return autosaveController.getPayload();
   return null;
 }
+/** Updates the visibility and state of the autosave recovery button. */
 function updateRestoreAutosaveButton() {
   const restoreAutosaveBtn = $("restoreAutosave");
   if (autosaveController) return autosaveController.updateRestoreButton(restoreAutosaveBtn);
   if (restoreAutosaveBtn) restoreAutosaveBtn.disabled = true;
 }
+/** Sets up event listeners to mark the project dirty on user interactions. */
 function wireAutosaveDirtyTracking() {
   if (autosaveController) return autosaveController.wireDirtyTracking();
 }
+/** Checks for an existing autosave snapshot and prompts the user to recover if found. */
 function maybePromptAutosaveRecovery() {
   if (!autosaveController) return;
   autosaveController.promptRecovery({
       source: "autosave-prompt"
   });
 }
+/** Serializes the entire project state (layers, frames, settings) into a JSON snapshot. */
 async function buildProjectSnapshot() {
   const outLayers = [];
   for (let li = 0; li < LAYERS_COUNT; li++) {
@@ -569,6 +598,7 @@ async function buildProjectSnapshot() {
       layers: outLayers
   };
 }
+/** Saves the current project to a file, triggering a browser download dialog. */
 async function saveProject() {
   try {
       if (typeof pausePlayback === "function") pausePlayback();
@@ -592,6 +622,7 @@ async function saveProject() {
   markProjectClean("Saved");
   updateRestoreAutosaveButton();
 }
+/** Loads a project from a File or Blob, restoring layers, frames, timeline, and settings. */
 function loadProject(file, options = {}) {
   const fr = new FileReader;
   fr.onerror = () => alert("Failed to read file.");
@@ -912,6 +943,7 @@ function loadProject(file, options = {}) {
   fr.readAsText(file);
 }
 
+/** Shows a dialog for image sequence export options (format, frame range, naming). */
 function askImgSeqExportOptions() {
   const exportImgSeqModal = $("exportImgSeqModal");
   const exportImgSeqModalBackdrop = $("exportImgSeqModalBackdrop");
@@ -951,6 +983,7 @@ function askImgSeqExportOptions() {
   });
 }
 
+/** Shows a dialog for GIF export options (quality, dithering, loop, frame rate). */
 function askGifExportOptions() {
   const exportGifModal = $("exportGifModal");
   const exportGifModalBackdrop = $("exportGifModalBackdrop");
@@ -1017,6 +1050,7 @@ function askGifExportOptions() {
       document.addEventListener("keydown", onEsc);
   });
 }
+/** Shows a dialog for configuring the autosave interval. */
 function askAutosaveIntervalOptions() {
   const autosaveIntervalModal = $("autosaveIntervalModal");
   const autosaveIntervalModalBackdrop = $("autosaveIntervalModalBackdrop");
@@ -1057,6 +1091,7 @@ function askAutosaveIntervalOptions() {
 }
 
 // "clear all" migrated to export/import flow for now
+/** Shows a confirmation dialog before clearing all project state. */
 function askClearAllConfirmation() {
     return new Promise(resolve => {
         if (!clearAllModal || !clearAllModalBackdrop || !clearAllConfirmBtn || !clearAllCancelBtn) {
@@ -1086,6 +1121,7 @@ function askClearAllConfirmation() {
     });
 }
 
+/** Resets the entire project to default state: empty layers, default timeline, no autosave. */
 async function clearAllProjectState() {
     const ok = await askClearAllConfirmation();
     if (!ok) return;
@@ -1139,6 +1175,7 @@ async function clearAllProjectState() {
 
 /// MISC WIRING CODE
 
+/** Wires up all export-related UI buttons (save, load, export GIF, export video) to their handlers. */
 function handleExportFunctionWiring() {
     $("exportMP4")?.addEventListener("click", async () => {
         const mime = pickMP4Mime();

@@ -31,6 +31,7 @@ eraserSize = eraserSettings.size;
 let antiAlias = false;
 let closeGapPx = 0;
 
+/** Sets up the brush cursor preview overlay on the given canvas element, tracking pointer position and size. */
 function initBrushCursorPreview(inputCanvasEl) {
     _brushPrevCanvas = inputCanvasEl;
     _brushPrevEl = document.getElementById("brushCursorPreview");
@@ -102,11 +103,13 @@ function initBrushCursorPreview(inputCanvasEl) {
   }
   
 
+/** Returns the brush shape configuration (round, square, etc.) for the given tool kind string. */
 function brushShapeForType(kind) {
     const t = String(kind || "circle");
     if (t === "circle" || t === "square" || t === "diamond" || t === "oval-h" || t === "oval-v" || t === "rect-h" || t === "rect-v" || t === "triangle") return t;
     return "circle";
 }
+/** Computes the pixel dimensions for a brush shape at the given size, accounting for spacing and shape geometry. */
 function brushShapeDimensions(shape, size) {
     const s = Math.max(1, Math.round(size || 1));
     switch (brushShapeForType(shape)) {
@@ -137,9 +140,11 @@ function brushShapeDimensions(shape, size) {
             };
     }
 }
+/** Clamps a numeric value to the [0, 1] range. */
 function clamp01(v) {
     return Math.max(0, Math.min(1, Number(v) || 0));
 }
+/** Merges a patch object of brush settings into a base settings object, returning the combined result. */
 function mergeBrushSettings(base, patch) {
     const next = {
         ...base,
@@ -152,6 +157,7 @@ function mergeBrushSettings(base, patch) {
     return next;
 }
 
+/** Stamps brush impressions along a line from (x0,y0) to (x1,y1) using Bresenham-style interpolation with the given settings and color. */
 function stampLine(ctx, x0, y0, x1, y1, sourceSettings, color, alpha = 1, composite = "source-over") {
     const settings = normalizedBrushRenderSettings(sourceSettings);
     const stamp = getBrushStamp(settings, color);
@@ -175,19 +181,23 @@ function stampLine(ctx, x0, y0, x1, y1, sourceSettings, color, alpha = 1, compos
     ctx.restore();
 }
 
+/** Returns a normalized copy of brush render settings with defaults filled in for missing fields. */
 function normalizedBrushRenderSettings(source) {
     return mergeBrushSettings(DEFAULT_TOOL_BRUSH_SETTINGS, source || {});
 }
 
 const _brushMaskCache = new Map();
 const _brushStampCache = new Map();
+/** Generates a cache key string for a brush mask based on its settings. */
 function brushMaskCacheKey(settings) {
     return `${settings.shape}|${settings.size}|${settings.angle}`;
 }
+/** Generates a cache key string for a brush stamp based on settings and color. */
 function brushStampCacheKey(settings, color) {
     return `${brushMaskCacheKey(settings)}|${color}`;
 }
 
+/** Creates or retrieves from cache a grayscale mask canvas for the given brush settings, used for stamp compositing. */
 function getBrushMask(sourceSettings) {
     const settings = normalizedBrushRenderSettings(sourceSettings);
     const key = brushMaskCacheKey(settings);
@@ -271,6 +281,7 @@ function getBrushMask(sourceSettings) {
     _brushMaskCache.set(key, out);
     return out;
 }
+/** Creates or retrieves from cache a colored stamp canvas combining the brush mask shape with the specified color. */
 function getBrushStamp(sourceSettings, colorRaw) {
     const settings = normalizedBrushRenderSettings(sourceSettings);
     const color = colorToHex(colorRaw || "#000000");
@@ -300,6 +311,7 @@ function getBrushStamp(sourceSettings, colorRaw) {
     return out;
 }
 
+/** Schedules a brush cursor preview update via requestAnimationFrame, with optional force flag to bypass throttling. */
 function scheduleBrushPreviewUpdate(force = false) {
     if (!_brushPrevEl || !_brushPrevCanvas) return;
     if (_brushPrevRAF && !force) return;
@@ -308,13 +320,16 @@ function scheduleBrushPreviewUpdate(force = false) {
         updateBrushPreview();
     });
 }
+/** Returns the currently active tool kind string for preview rendering purposes. */
 function getActiveToolKindForPreview() {
     return String(typeof tool !== "undefined" && tool ? tool : "");
 }
+/** Returns the brush size to use for the cursor preview based on the active tool kind. */
 function getBrushSizeForPreview(toolKind) {
     if (toolKind === "eraser") return Number(eraserSettings?.size ?? eraserSize ?? 8);
     return Number(brushSettings?.size ?? brushSize ?? 6);
 }
+/** Redraws the brush cursor preview on the FX canvas, showing size, shape, and position of the current brush. */
 function updateBrushPreview() {
     if (!_brushPrevEl || !_brushPrevCanvas) return;
     if (typeof textEntryActive !== "undefined" && textEntryActive) {
@@ -384,6 +399,7 @@ function updateBrushPreview() {
     _brushPrevEl.style.display = "block";
 }
 
+/** Returns whether anti-aliasing is enabled for brush rendering based on the current tool and settings. */
 function getBrushAntiAliasEnabled() {
     if (typeof brushAntiAlias !== "undefined") return !!brushAntiAlias;
     if (typeof brushAA !== "undefined") return !!brushAA;
@@ -399,6 +415,7 @@ function getBrushAntiAliasEnabled() {
 
 let _brushCtxMenu = null;
 let _brushCtxState = null;
+/** Creates and returns the brush context menu DOM element with shape, size, spacing, and opacity controls. Caches the result. */
 function ensureBrushCtxMenu() {
     if (_brushCtxMenu) return _brushCtxMenu;
     const m = document.createElement("div");
@@ -510,6 +527,7 @@ function ensureBrushCtxMenu() {
     _brushCtxMenu = m;
     return m;
 }
+/** Opens the brush context menu positioned near the click event, syncing controls from current state. */
 function openBrushCtxMenu(ev, anchorEl) {
     try {
         closeEraserCtxMenu?.();
@@ -539,6 +557,7 @@ function openBrushCtxMenu(ev, anchorEl) {
         });
     } catch {}
 }
+/** Hides the brush context menu and clears its state. */
 function closeBrushCtxMenu() {
     if (_brushCtxMenu) _brushCtxMenu.hidden = true;
     _brushCtxState = null;

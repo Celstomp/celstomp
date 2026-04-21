@@ -24,6 +24,7 @@ let rectToolPreview = null;
 let lineToolStart = null;
 let lineToolPreview = null;
 
+/** Extracts the normalized pressure value from a PointerEvent, defaulting to 0.5 for non-pen input. */
 function pressure(e) {
     const pid = Number.isFinite(e?.pointerId) ? e.pointerId : -1;
     const isPen = e?.pointerType === "pen";
@@ -34,6 +35,7 @@ function pressure(e) {
     pressureCache.set(pid, out);
     return out;
 }
+/** Computes the tilt magnitude from a PointerEvent using tiltX and tiltY, defaulting to 0 for non-pen. */
 function tiltAmount(e) {
     const pid = Number.isFinite(e?.pointerId) ? e.pointerId : -1;
     if (e?.pointerType !== "pen") {
@@ -50,6 +52,7 @@ function tiltAmount(e) {
     return out;
 }
 
+/** Handles pointerdown events on the canvas, initiating strokes, selections, or tool-specific actions. */
 function handlePointerDown(e) {
   if (e.pointerType === "touch" && window.__celstompPinching) return;
   if ((e.ctrlKey || e.metaKey) && e.pointerType !== "touch") {
@@ -82,6 +85,7 @@ function handlePointerDown(e) {
   if (e.button === 2 || tool === "hand") startPan(e); else startStroke(e);
 }
 
+/** Handles pointermove events, continuing active strokes, selections, or drag operations. */
 function handlePointerMove(e) {
   if (e.pointerType === "touch") e.preventDefault();
   if (e.pointerType === "touch" && window.__celstompPinching) return;
@@ -106,6 +110,7 @@ function handlePointerMove(e) {
   }
 }
 
+/** Handles pointerup events, finalizing strokes, selections, or drag operations. */
 function handlePointerUp(e) {
   if (e.pointerType === "touch") e.preventDefault();
   if (_ctrlMove.active && e.pointerId === _ctrlMove.pointerId) {
@@ -133,15 +138,18 @@ let strokeSmooth = .6;
 
 
 
+/** Maps a pressure smoothing level (0-100) to the corresponding smoothing factor. */
 function pressureSmoothFromLevel(level) {
     const lv = Math.max(0, Math.min(10, Number(level) || 0));
     return Math.max(.2, Math.min(1, 1 - lv * .08));
 }
+/** Maps a stroke smoothing level (0-100) to the corresponding smoothing window size. */
 function strokeSmoothFromLevel(level) {
     const lv = Math.max(0, Math.min(10, Number(level) || 0));
     return Math.max(.2, Math.min(1, 1 - lv * .08));
 }
 
+/** Called when a pen/stylus device is detected, optionally enabling pressure controls. */
 function notePenDetected(e) {
   if (!e || e.pointerType !== "pen") return;
   if (penDetected) return;
@@ -149,14 +157,17 @@ function notePenDetected(e) {
   setPenControlsVisible(true);
 }
 
+/** Shows or hides the pen-specific UI controls (pressure, tilt, stabilizer). */
 function setPenControlsVisible(visible) {
     if (!$("penControls")) return;
     $("penControls").hidden = !visible;
 }
 
+/** Returns true if the given tool name supports point stabilization (brush, pencil, eraser). */
 function shouldStabilizeTool(name) {
   return name === "brush" || name === "eraser" || name === "fill-brush" || name === "fill-eraser";
 }
+/** Applies moving-average point stabilization to reduce jitter, returning a smoothed (x, y) coordinate. */
 function stabilizePoint(e, x, y) {
   if (!shouldStabilizeTool(tool)) return {
       x: x,
@@ -184,6 +195,7 @@ let stabilizedPt = null;
 let strokeHex = null;
 let _fillEraseAllLayers = false;
 
+/** Renders the exact cel content for frame index idx onto the given 2D context, compositing all layers. */
 function drawExactCel(ctx, idx) {
     for (const L of mainLayerOrder) {
         const layer = layers[L];
@@ -209,6 +221,7 @@ function drawExactCel(ctx, idx) {
     }
 }
 
+/** Composites all visible layers for frame F onto the context, with optional background and previous-frame hold. */
 function drawCompositeAt(ctx, F, withBg = true, holdPrevWhenEmpty = true, holdPrevAlpha = 1) {
     ctx.save();
     ctx.clearRect(0, 0, contentW, contentH);
@@ -232,6 +245,7 @@ function drawCompositeAt(ctx, F, withBg = true, holdPrevWhenEmpty = true, holdPr
     ctx.restore();
 }
 
+/** Samples the pixel color at content-space coordinates (cx, cy) and returns it as a hex string. */
 function getPixelHexAtContentPoint(cx, cy) {
     const x = Math.max(0, Math.min(contentW - 1, Math.round(cx)));
     const y = Math.max(0, Math.min(contentH - 1, Math.round(cy)));
@@ -251,6 +265,7 @@ function getPixelHexAtContentPoint(cx, cy) {
     }
     return rgbToHex(d[0], d[1], d[2]);
 }
+/** Picks the color under the pointer from the composite canvas and sets it as the current color. */
 function pickCanvasColorAtEvent(e) {
     const pos = getCanvasPointer(e);
     const pt = screenToContent(pos.x, pos.y);
@@ -260,6 +275,7 @@ function pickCanvasColorAtEvent(e) {
     addCurrentColorToPalette();
 }
 
+/** Begins a new brush/eraser stroke, initializing undo state, tool parameters, and the stroke buffer. */
 function startStroke(e) {
   const pos = getCanvasPointer(e);
   let {x: x, y: y} = screenToContent(pos.x, pos.y);
@@ -435,15 +451,18 @@ function startStroke(e) {
   updateTimelineHasContent(currentFrame);
 }
 
+/** Marks a frame as having content for the given layer and color, updating the timeline indicator. */
 function markFrameHasContent(L, F, colorStr) {
     const c = getFrameCanvas(L, F, colorStr);
     if (c) c._hasContent = true;
 }
 
+/** Resets the bounding box tracker for erase stroke operations. */
 function resetEraseStrokeBounds() {
     eraseStrokeBounds = null;
 }
 
+/** Extends the erase stroke bounding box to include the line segment from (x0,y0) to (x1,y1). */
 function extendEraseStrokeBounds(x0, y0, x1, y1, brushSpan) {
     const span = Math.max(1, Number(brushSpan) || eraserSize || 1);
     const pad = Math.max(2, span / 2 + 2);
@@ -466,6 +485,7 @@ function extendEraseStrokeBounds(x0, y0, x1, y1, brushSpan) {
     eraseStrokeBounds.maxY = Math.max(eraseStrokeBounds.maxY, maxY);
 }
 
+/** Continues an active stroke with a new pointer event, drawing brush stamps or erasing along the path. */
 function continueStroke(e) {
   if (!isDrawing) return;
   const pos = getCanvasPointer(e);
@@ -553,6 +573,7 @@ function continueStroke(e) {
   updateTimelineHasContent(currentFrame);
 }
 
+/** Finalizes the current stroke, committing undo state, updating timeline, and triggering post-stroke cleanup. */
 function endStroke() {
   if (!isDrawing) return;
   isDrawing = false;
@@ -681,6 +702,7 @@ function endStroke() {
   stabilizedPt = null;
 }
 
+/** End-of-stroke handler with mobile-specific safety checks for touch events and palm rejection. */
 function endStrokeMobileSafe(e) {
   if (typeof _touchGestureActive !== "undefined" && _touchGestureActive) {
       try {
@@ -822,6 +844,7 @@ let panStart = {
     oy: 0
 };
 
+/** Initiates canvas pan operation from a pointer event, storing the initial viewport offset. */
 function startPan(e) {
   isPanning = true;
   const pos = getCanvasPointer(e);
@@ -832,6 +855,7 @@ function startPan(e) {
       oy: getOffsetY()
   };
 }
+/** Updates the canvas viewport offset during an active pan operation based on pointer movement. */
 function continuePan(e) {
   if (!isPanning) return;
   const pos = getCanvasPointer(e);
@@ -845,6 +869,7 @@ function continuePan(e) {
   updateClipMarkers();
   queueClearFx();
 }
+/** Finalizes the pan operation, releasing the pan state and refreshing the canvas view. */
 function endPan() {
   isPanning = false;
 }
@@ -889,6 +914,7 @@ let rectSelection = {
     pointerId: null
 };
 
+/** Starts a ctrl+drag move operation on the current cel content, creating an undo snapshot. */
 function beginCtrlMove(e) {
   if (activeLayer === PAPER_LAYER) return false;
   const leftDown = e.button === 0 || e.buttons === 1;
@@ -928,6 +954,7 @@ function beginCtrlMove(e) {
   } catch {}
   return true;
 }
+/** Updates the position of the ctrl-moved content during an active drag operation. */
 function updateCtrlMove(e) {
   if (!_ctrlMove.active) return;
   const pos = getCanvasPointer(e);
@@ -948,6 +975,7 @@ function updateCtrlMove(e) {
   if (typeof queueRenderAll === "function") queueRenderAll();
   if (typeof updateTimelineHasContent === "function") updateTimelineHasContent(_ctrlMove.F);
 }
+/** Finalizes the ctrl+drag move, compositing the moved content at its new position and registering undo. */
 function endCtrlMove(e) {
   if (!_ctrlMove.active) return;
   try {
@@ -980,6 +1008,7 @@ function endCtrlMove(e) {
 // RECT SELECTION //
 ////////////////////
 
+/** Clears the rectangular selection overlay and any associated selection state. */
 function clearRectSelection() {
     rectSelection.active = false;
     rectSelection.moving = false;
@@ -990,6 +1019,7 @@ function clearRectSelection() {
     rectSelection.moveDy = 0;
     queueRenderAll();
 }
+/** Draws the marching-ants style rectangular selection overlay on the FX canvas. */
 function drawRectSelectionOverlay(ctx) {
     if (!rectSelection.active) return;
     ctx.save();

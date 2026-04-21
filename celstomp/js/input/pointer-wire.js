@@ -1,3 +1,4 @@
+/** Wires all pointer event listeners (down, move, up, key) on the drawing canvas for stroke and tool interaction. */
 function wirePointerDrawingOnCanvas(drawCanvas) {
   if (!drawCanvas) return;
   if (window.__CELSTOMP_PTR_DRAW_WIRED__) return;

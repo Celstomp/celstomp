@@ -6,9 +6,16 @@ const globalHistory = {
 };
 let _pendingGlobalStep = null;
 let _globalStepDirty = false;
+/** Marks the current global history step as having modifications. */
 function markGlobalHistoryDirty() {
     _globalStepDirty = true;
 }
+/**
+ * Starts a new global undo/redo history step, capturing the current canvas state as the "before" snapshot.
+ * @param {number} [L] - Layer index. Defaults to activeLayer.
+ * @param {number} [F] - Frame index. Defaults to currentFrame.
+ * @param {string|null} [keyArg] - Optional swatch color key override.
+ */
 function beginGlobalHistoryStep(L = activeLayer, F = currentFrame, keyArg = null) {
     _globalStepDirty = false;
     if (L === PAPER_LAYER) {
@@ -27,6 +34,7 @@ function beginGlobalHistoryStep(L = activeLayer, F = currentFrame, keyArg = null
         before: snapshotFor(L, F, key)
     };
 }
+/** Commits the pending global history step, capturing the "after" state and pushing it onto the undo stack. */
 function commitGlobalHistoryStep() {
     const s = _pendingGlobalStep;
     _pendingGlobalStep = null;
@@ -40,6 +48,11 @@ function commitGlobalHistoryStep() {
     if (globalHistory.undo.length > historyLimit) globalHistory.undo.shift();
     globalHistory.redo.length = 0;
 }
+/**
+ * Restores the frame/layer context for an undo/redo action jump.
+ * @param {number} L - Layer index.
+ * @param {number} F - Frame index.
+ */
 function _jumpToActionContext(L, F) {
     currentFrame = F;
     activeLayer = L;
@@ -55,6 +68,13 @@ function _jumpToActionContext(L, F) {
         queueRenderAll();
     } catch {}
 }
+/**
+ * Builds a composite history map key from layer, frame, and color key.
+ * @param {number} L - Layer index.
+ * @param {number} F - Frame index.
+ * @param {string} key - Swatch color key.
+ * @returns {string} Composite key string.
+ */
 function historyKey(L, F, key) {
     return `${L}:${F}:${String(key || "")}`;
 }

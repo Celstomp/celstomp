@@ -6,6 +6,11 @@ const fillBrushTrailColor = "#ff1744";
 let canvasBgColor = "#bfbfbf";
 
 
+/**
+ * Converts any CSS color string to a normalized #RRGGBB hex string.
+ * @param {string} c - CSS color value.
+ * @returns {string} Uppercase hex color string (e.g. "#FF0000").
+ */
 function colorToHex(c) {
   const ctx = _colorCtx;
   if (!ctx) return String(c || "#000").trim();
@@ -25,6 +30,11 @@ const _normCtx = _normC.getContext("2d", {
     willReadFrequently: true
 });
 
+/**
+ * Normalizes any CSS color string to a lowercase #rrggbb hex string via a 1×1 canvas.
+ * @param {string} colorStr - CSS color value.
+ * @returns {string} Hex color string (e.g. "#ff0000"), or "#000000" on failure.
+ */
 function normalizeToHex(colorStr) {
   try {
       _normCtx.clearRect(0, 0, 1, 1);
@@ -37,6 +47,12 @@ function normalizeToHex(colorStr) {
   }
 }
 
+/**
+ * Normalizes a color string to a canonical uppercase hex key suitable for use as a swatch map key.
+ * Handles #hex, rgb()/rgba(), and other CSS color formats.
+ * @param {string} c - Color string to normalize.
+ * @returns {string} Uppercase hex key (e.g. "#FF0000").
+ */
 function swatchColorKey(c) {
   c = (c || "").trim();
   if (!c) return "#000000";
@@ -62,6 +78,10 @@ function swatchColorKey(c) {
   return c.toUpperCase();
 }
 
+/**
+ * Rekeys a layer's sublayer map so every entry uses a canonical hex key, and repairs suborder/children references.
+ * @param {object} layer - Layer object with .sublayers (Map) and .suborder (string[]).
+ */
 function normalizeLayerSwatchKeys(layer) {
   if (!layer) return;
   if (!layer.sublayers) layer.sublayers = new Map;
@@ -113,6 +133,7 @@ function normalizeLayerSwatchKeys(layer) {
 
 
 let _cursorColorPicker = null;
+/** Creates or returns the hidden `<input type="color">` element used for cursor-position color picking. */
 function ensureCursorColorPicker() {
     if (_cursorColorPicker && document.body.contains(_cursorColorPicker)) return _cursorColorPicker;
     if (_cursorColorPicker) {
@@ -143,6 +164,12 @@ function ensureCursorColorPicker() {
     return inp;
 }
 
+/**
+ * Opens the native color picker positioned near the cursor.
+ * @param {PointerEvent} e - Event providing screen coordinates.
+ * @param {string} initialHex - Starting color value.
+ * @param {function(string): void} onPick - Callback receiving the picked hex color.
+ */
 function openColorPickerAtCursor(e, initialHex, onPick) {
   const picker = ensureCursorColorPicker();
   const pad = 8;
@@ -225,6 +252,12 @@ function openColorPickerAtCursor(e, initialHex, onPick) {
   }
 }
 
+/**
+ * Opens the native color picker centered on a given element.
+ * @param {HTMLElement} anchorEl - Element to position the picker near.
+ * @param {string} initialHex - Starting color value.
+ * @param {function(string): void} onPick - Callback receiving the picked hex color.
+ */
 function openColorPickerAtElement(anchorEl, initialHex, onPick) {
   const r = anchorEl?.getBoundingClientRect?.();
   const fakeEvent = {
@@ -234,6 +267,11 @@ function openColorPickerAtElement(anchorEl, initialHex, onPick) {
   openColorPickerAtCursor(fakeEvent, initialHex, onPick);
 }
 
+/**
+ * Normalizes a hex color string to 6-digit uppercase form (e.g. "#FF0" → "#FFFF00").
+ * @param {string} hex - Hex color string.
+ * @returns {string|null} Uppercase 6-digit hex, or null if not a valid hex color.
+ */
 function normHex6(hex) {
   hex = String(hex || "").trim();
   if (!isHexColor(hex)) return null;
@@ -243,6 +281,11 @@ function normHex6(hex) {
   }
   return hex.toUpperCase();
 }
+/**
+ * Converts a hex color string to an {r, g, b} object.
+ * @param {string} hex - Hex color string.
+ * @returns {{r: number, g: number, b: number}|null} RGB values (0–255), or null if invalid.
+ */
 function swatchHexToRgb(hex) {
   hex = normHex6(hex);
   if (!hex) return null;
@@ -263,6 +306,11 @@ const _colorCtx = (() => {
 })();
 
 
+/**
+ * Converts a hex color string to an {r, g, b} object.
+ * @param {string} hex - Any CSS color string; normalized internally.
+ * @returns {{r: number, g: number, b: number}} RGB values (0–255).
+ */
 function hexToRgb(hex) {
   const h = normalizeToHex(hex).slice(1);
   return {
@@ -271,9 +319,23 @@ function hexToRgb(hex) {
       b: parseInt(h.slice(4, 6), 16)
   };
 }
+/**
+ * Converts r, g, b channel values to an uppercase hex color string.
+ * @param {number} r - Red (0–255).
+ * @param {number} g - Green (0–255).
+ * @param {number} b - Blue (0–255).
+ * @returns {string} Uppercase hex color (e.g. "#FF8800").
+ */
 function rgbToHex(r, g, b) {
   return ("#" + [ r, g, b ].map(v => Math.max(0, Math.min(255, v | 0)).toString(16).padStart(2, "0")).join("")).toUpperCase();
 }
+/**
+ * Converts HSV color values to RGB.
+ * @param {number} h - Hue (0–360 degrees).
+ * @param {number} s - Saturation (0–1).
+ * @param {number} v - Value (0–1).
+ * @returns {{r: number, g: number, b: number}} RGB values (0–255).
+ */
 function hsvToRgb(h, s, v) {
   h = (h % 360 + 360) % 360;
   s = clamp(s, 0, 1);
@@ -313,6 +375,13 @@ function hsvToRgb(h, s, v) {
       b: Math.round((bp + m) * 255)
   };
 }
+/**
+ * Converts RGB color values to HSV.
+ * @param {number} r - Red (0–255).
+ * @param {number} g - Green (0–255).
+ * @param {number} b - Blue (0–255).
+ * @returns {{h: number, s: number, v: number}} HSV values (h in degrees, s/v 0–1).
+ */
 function rgbToHsv(r, g, b) {
   r /= 255;
   g /= 255;

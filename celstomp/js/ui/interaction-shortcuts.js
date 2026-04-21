@@ -8,6 +8,7 @@ let previousTool = null;
 
 // keyboard shortcuts, some other stuff tagged "QoL"
 
+/** Initializes all quality-of-life UI features: keyboard shortcuts, guided tutorial, unsaved changes guard, and timeline enhancements. */
 function wireQoLFeatures() {
   if (document._celstompQoLWired) return;
   document._celstompQoLWired = true;
@@ -21,6 +22,7 @@ function wireQoLFeatures() {
   _wireExtraKeyboardShortcuts();
 }
 
+/** Returns true if the keyboard event is a shortcut trigger (typically the ? key) that should open the shortcuts modal. */
 function _isShortcutsHotkey(e) {
   const key = String(e?.key || "");
   const code = String(e?.code || "");
@@ -30,6 +32,7 @@ function _isShortcutsHotkey(e) {
 }
 
 // IMPL funcs
+/** Sets up the keyboard shortcuts help modal with toggle and dismiss behavior. */
 function _wireShortcutsModal() {
   const modal = $("shortcutsModal");
   const backdrop = $("shortcutsModalBackdrop");
@@ -87,6 +90,7 @@ function _wireShortcutsModal() {
   });
 }
 
+/** Conditionally shows a guided tutorial overlay for first-time users, with step-by-step feature introductions. */
 function _maybeShowGuidedTutorial(options = {}) {
   const force = !!options.force;
   const modal = $("tutorialModal");
@@ -273,11 +277,13 @@ function _maybeShowGuidedTutorial(options = {}) {
   window.addEventListener("resize", onReposition, true);
   window.addEventListener("scroll", onReposition, true);
 }
+/** Returns true if the given element is an active text input field where keyboard shortcuts should be suppressed. */
 function isTyping(el) {
   if (!el) return false;
   const tag = (el.tagName || "").toLowerCase();
   return tag === "input" || tag === "textarea" || el.isContentEditable;
 }
+/** Adds a beforeunload listener that warns about unsaved changes when the user attempts to leave. */
 function _wireUnsavedChangesGuard() {
   window.addEventListener("beforeunload", e => {
       if (markProjectDirty && document.querySelector("#saveStateBadge")?.textContent !== "Saved") {
@@ -287,6 +293,7 @@ function _wireUnsavedChangesGuard() {
       }
   });
 }
+/** Wires up timeline quality-of-life features: frame width control, keyboard navigation, and cell interaction improvements. */
 function _wireTimelineEnhancements() {
   const insertBtn = $("insertFrameBtn");
   const deleteBtn = $("deleteFrameBtn");
@@ -329,6 +336,7 @@ function _wireTimelineEnhancements() {
   }
 }
 
+/** Reads the current timeline frame width from the CSS custom property or input element. */
 function readTimelineFrameWidth() {
   const cssValue = getComputedStyle(document.documentElement).getPropertyValue("--frame-w");
   const parsed = parseFloat(cssValue);
@@ -336,6 +344,7 @@ function readTimelineFrameWidth() {
   return timelineFrameWidth;
 }
 
+/** Sets the timeline frame width CSS variable and updates the input control to match. */
 function applyTimelineFrameWidth(value) {
   const next = Math.max(15, Math.min(100, Math.round(Number(value) || 24)));
   timelineFrameWidth = next;
@@ -344,6 +353,7 @@ function applyTimelineFrameWidth(value) {
   if (typeof updateClipMarkers === "function") updateClipMarkers();
 }
 
+/** Triggers a full re-render of the timeline UI after structural or width changes. */
 function refreshTimelineView() {
   if (typeof buildTimeline === "function") {
       buildTimeline();
@@ -356,6 +366,7 @@ function refreshTimelineView() {
   }
 }
 
+/** Inserts a new blank frame at the specified index in the timeline, shifting existing frames. */
 function insertFrame(frameIndex) {
   beginGlobalHistoryStep();
   for (let i = totalFrames - 1; i >= frameIndex; i--) {
@@ -374,6 +385,7 @@ function insertFrame(frameIndex) {
   refreshTimelineView();
   commitGlobalHistoryStep();
 }
+/** Deletes the frame at the specified index from the timeline, shifting subsequent frames backward. */
 function deleteFrame(frameIndex) {
   if (totalFrames <= 1) {
       alert("Cannot delete the last frame");
@@ -402,6 +414,7 @@ function deleteFrame(frameIndex) {
   refreshTimelineView();
   commitGlobalHistoryStep();
 }
+/** Wires quality-of-life features for layer management: drag reorder, visibility toggles, and blend mode controls. */
 function _wireLayerQoL() {
   const soloBtn = $("soloLayerBtn");
   const showAllBtn = $("showAllLayersBtn");
@@ -433,6 +446,7 @@ function _wireLayerQoL() {
   }
 }
 
+/** Wires quality-of-life features for the color palette: drag reorder, add/remove, and live preview. */
 function _wirePaletteQoL() {
   const newBtn = $("newPaletteBtn");
   const exportBtn = $("exportPaletteBtn");
@@ -491,6 +505,7 @@ function _wirePaletteQoL() {
       });
   }
 }
+/** Binds additional keyboard shortcuts for actions like flip, undo/redo, tool switching, and frame navigation. */
 function _wireExtraKeyboardShortcuts() {
   document.addEventListener("keydown", e => {
       if (e.defaultPrevented) return;
@@ -610,6 +625,7 @@ function _wireExtraKeyboardShortcuts() {
       }, true);
   }
 }
+/** Flips the selected cel content horizontally or vertically, with automatic undo registration. */
 function flipSelection(horizontal) {
     if (!rectSelection.active) return;
     const c = getFrameCanvas(rectSelection.L, rectSelection.F, rectSelection.key);
@@ -650,6 +666,7 @@ function flipSelection(horizontal) {
     updateTimelineHasContent(rectSelection.F);
 }
 
+/** Master function that wires all keyboard shortcut handlers to the window keydown event. */
 function wireKeyboardShortcuts() {
   if (document._celstompKeysWired) return;
   document._celstompKeysWired = true;
@@ -696,6 +713,7 @@ function wireKeyboardShortcuts() {
 }
 
 // event handler for key pressed in window
+/** Central keyboard event handler that dispatches to the appropriate tool or action based on the key combination. */
 function onWindowKeyDown(e) {
     const ctrl = e.ctrlKey || e.metaKey;
     {
@@ -940,6 +958,7 @@ function onWindowKeyDown(e) {
     }
 }
 
+/** Deletes the active color sublayer content from the current frame, clearing the cel. */
 function deleteActiveColorAtCurrentFrame() {
     if (activeLayer === PAPER_LAYER) return false;
     const L = activeLayer;

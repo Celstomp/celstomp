@@ -11,6 +11,7 @@ let hsvPick = {
     v: 1
   };
 
+/** Converts a pointer event to local coordinates relative to the color wheel canvas element. */
 function wheelLocalFromEvent(e) {
     const hsvWheelCanvas = $("hsvWheelCanvas");
     const rect = hsvWheelCanvas.getBoundingClientRect();
@@ -22,6 +23,7 @@ function wheelLocalFromEvent(e) {
     };
 }
 
+/** Computes the geometry (vertices, center, radius) of the saturation-value triangle inside the HSV wheel. */
 function getSVTriangleGeom(g) {
     const triR = Math.floor(g.ringInner * 0.90);
     const angH = (hsvPick.h - 90) * (Math.PI / 180);
@@ -47,6 +49,7 @@ function getSVTriangleGeom(g) {
     };
 }
 
+/** Converts a point (px, py) to saturation and brightness values using barycentric coordinates within the SV triangle. */
 function barycentricSV(px, py, tri) {
     const {a, b, c, detT} = tri;
     if (!detT) return {
@@ -63,6 +66,7 @@ function barycentricSV(px, py, tri) {
     };
 }
 
+/** Returns the closest point on line segment (a,b) to the given point (px, py). */
 function closestPointOnSegment(px, py, ax, ay, bx, by) {
     const abx = bx - ax;
     const aby = by - ay;
@@ -78,6 +82,7 @@ function closestPointOnSegment(px, py, ax, ay, bx, by) {
     };
 }
 
+/** Finds the closest valid point inside the SV triangle to the given coordinates, clamping to triangle edges. */
 function closestPointOnSVTriangle(px, py, tri) {
     const {a, b, c} = tri;
     const abx = b.x - a.x;
@@ -145,6 +150,7 @@ function closestPointOnSVTriangle(px, py, tri) {
     };
 }
 
+/** Determines which region of the HSV wheel (ring, triangle, or none) the given point falls within. */
 function hitTestWheel(x, y) {
     const g = _wheelGeom || computeWheelGeom();
     if (!g) return null;
@@ -166,6 +172,7 @@ function hitTestWheel(x, y) {
     if (inRing) return "hue";
     return null;
 }
+/** Updates the selected hue from a point on the color wheel ring and refreshes the SV triangle display. */
 function updateFromHuePoint(x, y) {
     const g = _wheelGeom;
     const ang = Math.atan2(y - g.R, x - g.R);
@@ -178,6 +185,7 @@ function updateFromHuePoint(x, y) {
     rememberLayerColorSafe();
     drawHSVWheel();
 }
+/** Updates the selected saturation and brightness from a point inside the SV triangle. */
 function updateFromSVPoint(x, y) {
     const g = _wheelGeom;
 
@@ -219,6 +227,7 @@ function updateFromSVPoint(x, y) {
     rememberLayerColorSafe();
     drawHSVWheel();
 }
+/** Initializes the HSV color wheel picker with event listeners for drag interaction on the hue ring and SV triangle. */
 function initHSVWheelPicker() {
     const hsvWheelCanvas = $("hsvWheelCanvas");
     const hsvWheelWrap = $("hsvWheelWrap");
@@ -272,6 +281,7 @@ function initHSVWheelPicker() {
     }
 }
 
+/** Computes and caches the geometric dimensions (center, radius, triangle) of the HSV wheel based on canvas size. */
 function computeWheelGeom() {
     const hsvWheelCanvas = $("hsvWheelCanvas");
     const hsvWheelWrap = $("hsvWheelWrap");
@@ -301,6 +311,7 @@ function computeWheelGeom() {
         sqSize: sqSize
     };
 }
+/** Renders the hue ring gradient to an offscreen canvas for efficient redraw. */
 function buildRingImage(geom) {
     const {size: size, R: R, ringInner: ringInner, ringOuter: ringOuter} = geom;
     const img = new ImageData(size, size);
@@ -326,6 +337,7 @@ function buildRingImage(geom) {
     }
     return img;
 }
+/** Renders the saturation-value square gradient to an offscreen canvas. */
 function buildSVSquareImage(geom) {
     const {sqSize: sqSize, size: size} = geom;
     const img = new ImageData(sqSize, sqSize);
@@ -345,6 +357,7 @@ function buildSVSquareImage(geom) {
     return img;
 }
 
+/** Renders the saturation-value triangle gradient to an offscreen canvas using the current hue. */
 function buildSVTriangleImage(geom) {
     const { size, R, ringInner } = geom;
     const triR = Math.floor(ringInner * 0.90);
@@ -385,6 +398,7 @@ function buildSVTriangleImage(geom) {
     return { img, vertices: [{x:x1,y:y1}, {x:x2,y:y2}, {x:x3,y:y3}], triR };
 }
 
+/** Draws the complete HSV wheel (hue ring + SV triangle + selection indicators) to the canvas. */
 function drawHSVWheel() {
     const hsvWheelCanvas = $("hsvWheelCanvas");
     if (!hsvWheelCanvas) return;

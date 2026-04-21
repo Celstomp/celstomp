@@ -38,12 +38,14 @@ let mainLayerOrder = DEFAULT_MAIN_LAYER_ORDER.slice();
 
 const LAYER_BLEND_MODES = [ "normal", "multiply", "overlay" ];
 
+/** Normalizes a blend mode string to a valid option from LAYER_BLEND_MODES, defaulting to "normal". */
 function normalizeLayerBlendMode(mode) {
     const key = String(mode || "normal").toLowerCase();
     if (LAYER_BLEND_MODES.includes(key)) return key;
     return "normal";
 }
 
+/** Returns the canvas globalCompositeOperation value for a given layer blend mode. */
 function layerBlendModeCanvasOperation(mode) {
     const normalized = normalizeLayerBlendMode(mode);
     if (normalized === "multiply") return "multiply";
@@ -51,6 +53,7 @@ function layerBlendModeCanvasOperation(mode) {
     return "source-over";
 }
 
+/** Returns the current blend mode for the specified layer. */
 function getLayerBlendMode(L) {
     const layer = layers?.[L];
     if (!layer) return "normal";
@@ -59,6 +62,7 @@ function getLayerBlendMode(L) {
     return normalized;
 }
 
+/** Sets the blend mode for the specified layer and refreshes the render. */
 function setLayerBlendMode(L, mode) {
     const layer = layers?.[L];
     if (!layer) return;
@@ -66,6 +70,7 @@ function setLayerBlendMode(L, mode) {
     queueRenderAll();
 }
 
+/** Returns the display name for a layer, generating a default if unset. */
 function getLayerName(layer) {
     switch (layer) {
         case LAYER.LINE:
@@ -83,6 +88,7 @@ function getLayerName(layer) {
     }
 }
 
+/** Validates and normalizes a layer order array, ensuring all 5 layer types are present. */
 function normalizeMainLayerOrder(order) {
     if (!Array.isArray(order)) return DEFAULT_MAIN_LAYER_ORDER.slice();
     const seen = new Set;
@@ -100,25 +106,30 @@ function normalizeMainLayerOrder(order) {
     }
     return out;
 }
+/** Returns the main layers in top-to-bottom rendering order. */
 function mainLayersTopToBottom() {
     return mainLayerOrder.slice().reverse();
 }
 
+/** Returns the remembered/last-used color for the specified layer. */
 function rememberedColorForLayer(L) {
   if (L === LAYER.FILL) return fillWhite;
   return layerColorMem[L] || "#000000";
 }
 
+/** Saves the current active color as the remembered color for the specified layer. */
 function rememberCurrentColorForLayer(L = activeLayer) {
   if (L === LAYER.FILL) return;
   layerColorMem[L] = currentColor;
 }
 
+/** Restores the remembered color for the specified layer as the active color. */
 function applyRememberedColorForLayer(L = activeLayer) {
   currentColor = rememberedColorForLayer(L);
   setColorSwatch();
 }
 
+/** Synchronizes all color UI elements (swatches, picker, inputs) to reflect the active layer state. */
 function syncActiveLayerColorUI({
   layer: layer = activeLayer,
   color: color = null,
@@ -180,6 +191,7 @@ function syncActiveLayerColorUI({
   }
 }
 
+/** Updates the color swatch display to show the current active color. */
 function setColorSwatch() {
   const brushSwatch = $("brushSwatch");
   const brushHexEl = $("brushHex");
@@ -188,6 +200,7 @@ function setColorSwatch() {
   brushHexEl.textContent = currentColor.toUpperCase();
 }
 
+/** Returns the color key to use for ctrl+move operations on a given layer. */
 function _ctrlMovePickKeyForLayer(L) {
   if (L === LAYER.FILL) {
       // what
@@ -196,6 +209,7 @@ function _ctrlMovePickKeyForLayer(L) {
   return activeSubColor?.[L] ?? (typeof currentColor === "string" ? currentColor : "#000000");
 }
 
+/** Returns the offscreen canvas for the active cel, used during ctrl+move operations. */
 function getActiveCelCanvasForMove() {
   const L = activeLayer;
   const F = currentFrame;
@@ -210,6 +224,7 @@ function getActiveCelCanvasForMove() {
   };
 }
 
+/** Returns or creates the offscreen canvas for a specific layer, frame, and color sublayer. */
 function getFrameCanvas(L, F, colorStr) {
   const key = colorToHex(colorStr || activeSubColor?.[L] || currentColor || "#000");
   const sub = ensureSublayer(L, key);
@@ -237,6 +252,7 @@ function getFrameCanvas(L, F, colorStr) {
   return sub.frames[F];
 }
 
+/** Resizes all layer canvases to match the current content dimensions. */
 function syncAllLayerCanvasSizesToContent() {
     const targetW = Math.max(1, contentW | 0);
     const targetH = Math.max(1, contentH | 0);
@@ -266,6 +282,7 @@ function syncAllLayerCanvasSizesToContent() {
     }
 }
 
+/** Creates or retrieves a sublayer for the given layer and color, initializing its frame array. */
 function ensureSublayer(L, colorStr) {
   const hex = swatchColorKey(colorStr);
   const layer = layers[L];
@@ -325,6 +342,7 @@ function ensureSublayer(L, colorStr) {
   return sub;
 }
 
+/** Renders the paper/background layer swatch in the layer UI. */
 function renderPaperSwatch() {
   const host = document.getElementById("swatches-paper");
   if (!host) return;
@@ -353,6 +371,7 @@ function renderPaperSwatch() {
   host.appendChild(btn);
 }
 
+/** Renders color swatches for a specific layer or all layers in the swatch panel. */
 function renderLayerSwatches(onlyLayer = null) {
   renderPaperSwatch();
   if (onlyLayer != null) {
@@ -450,12 +469,14 @@ function renderLayerSwatches(onlyLayer = null) {
   }
 }
 
+/** Sets the canvas background color and triggers a re-render. */
 function setCanvasBgColor(next) {
   canvasBgColor = normalizeToHex(next || canvasBgColor || "#bfbfbf");
   if (bgColorInput) bgColorInput.value = canvasBgColor;
   renderPaperSwatch();
 }
 
+/** Returns true if any pixel in the canvas has non-zero alpha. */
 function _canvasHasAnyAlpha(c) {
     try {
         const ctx = c.getContext("2d", {
@@ -468,6 +489,7 @@ function _canvasHasAnyAlpha(c) {
     } catch {}
     return false;
 }
+/** Accurately checks if a sublayer has any content by scanning pixel data. */
 function _sublayerHasAnyContentAccurate(sub) {
     if (!sub || !Array.isArray(sub.frames)) return false;
     for (let f = 0; f < sub.frames.length; f++) {
@@ -484,6 +506,7 @@ function _sublayerHasAnyContentAccurate(sub) {
     return false;
 }
 
+/** Removes sublayers with no content from the specified layer to free memory. */
 function pruneUnusedSublayers(L) {
     if (L === PAPER_LAYER) return false;
     const layer = layers[L];
@@ -535,6 +558,7 @@ function pruneUnusedSublayers(L) {
 
 // lookup funcs
 
+/** Returns the DOM element ID for the swatch container of a given layer. */
 function swatchContainerIdForLayer(L) {
   if (L === PAPER_LAYER) return "swatches-paper";
   if (L === LAYER.SKETCH) return "swatches-sketch";
@@ -543,6 +567,7 @@ function swatchContainerIdForLayer(L) {
   if (L === LAYER.COLOR) return "swatches-color";
   return "swatches-fill";
 }
+/** Returns the DOM element ID for the layer radio button of a given layer. */
 function layerRadioIdForLayer(L) {
   if (L === PAPER_LAYER) return "bt-paper";
   if (L === LAYER.SKETCH) return "bt-sketch-layer";
@@ -552,6 +577,7 @@ function layerRadioIdForLayer(L) {
   return "bt-fill";
 }
 
+/** Parses a layer value from a DOM element and returns the corresponding layer index. */
 function layerFromValue(val) {
   if (val === "paper") return PAPER_LAYER;
   if (val === "sketch") return LAYER.SKETCH;
@@ -562,12 +588,14 @@ function layerFromValue(val) {
   return LAYER.LINE;
 }
 
+/** Sets the radio button for the specified layer as checked in the UI. */
 function setLayerRadioChecked(L) {
   const id = layerRadioIdForLayer(L);
   const r = document.getElementById(id);
   if (r) r.checked = true;
 }
 
+/** Returns true if the specified main layer has any content in the given frame. */
 function mainLayerHasContent(L, F) {
     const layer = layers[L];
     if (!layer || !layer.suborder || !layer.sublayers) return false;
@@ -579,6 +607,7 @@ function mainLayerHasContent(L, F) {
     return false;
 }
 
+/** Sets the visibility of a layer and updates the UI toggle button. */
 function setLayerVisibility(L, vis) {
     const now = !!vis;
     const cur = layers[L].opacity ?? 1;
@@ -591,6 +620,7 @@ function setLayerVisibility(L, vis) {
     queueRenderAll();
     updateVisBtn(L);
 }
+/** Sets the opacity of a layer (0-1) and triggers a re-render. */
 function setLayerOpacity(L, a) {
     const v = Math.max(0, Math.min(1, Number(a) || 0));
     layers[L].opacity = v;
@@ -604,6 +634,7 @@ function setLayerOpacity(L, a) {
 ///////////
 let _layerOpMenu = null;
 let _layerOpState = null;
+/** Creates and returns the layer opacity slider menu, caching the result. */
 function ensureLayerOpacityMenu() {
     if (_layerOpMenu) return _layerOpMenu;
     const m = document.createElement("div");
@@ -641,6 +672,7 @@ function ensureLayerOpacityMenu() {
     _layerOpMenu = m;
     return m;
 }
+/** Opens the opacity menu for a layer near the triggering event. */
 function openLayerOpacityMenu(L, ev) {
     if (L === PAPER_LAYER) return;
     if (!layers?.[L]) return;
@@ -674,6 +706,7 @@ function openLayerOpacityMenu(L, ev) {
         });
     } catch {}
 }
+/** Hides the layer opacity menu. */
 function closeLayerOpacityMenu() {
     if (_layerOpMenu) _layerOpMenu.hidden = true;
     _layerOpState = null;
@@ -681,6 +714,7 @@ function closeLayerOpacityMenu() {
 
 let _layerRowMenu = null;
 let _layerRowState = null;
+/** Creates and returns the layer row context menu with rename, reorder, and delete options. */
 function ensureLayerRowMenu() {
     if (_layerRowMenu) return _layerRowMenu;
     const m = document.createElement("div");
@@ -717,6 +751,7 @@ function ensureLayerRowMenu() {
     _layerRowMenu = m;
     return m;
 }
+/** Opens the context menu for a layer row near the triggering event. */
 function openLayerRowMenu(L, ev) {
     if (L === PAPER_LAYER) return;
     if (!layers?.[L]) return;
@@ -748,16 +783,19 @@ function openLayerRowMenu(L, ev) {
     m.style.left = `${x}px`;
     m.style.top = `${y}px`;
 }
+/** Hides the layer row context menu. */
 function closeLayerRowMenu() {
     if (_layerRowMenu) _layerRowMenu.hidden = true;
     _layerRowState = null;
 }
 
 const visBtnByLayer = new Map;
+/** Returns true if the specified layer is currently hidden. */
 function layerIsHidden(L) {
     if (L === PAPER_LAYER) return false;
     return (layers[L]?.opacity ?? 1) <= 0;
 }
+/** Updates the visibility toggle button appearance for a layer. */
 function updateVisBtn(L) {
     const btn = visBtnByLayer.get(L);
     if (!btn) return;
@@ -767,6 +805,7 @@ function updateVisBtn(L) {
     btn.title = hidden ? "Show layer" : "Hide layer";
     btn.setAttribute("aria-pressed", hidden ? "true" : "false");
 }
+/** Returns all DOM elements associated with a layer row in the UI. */
 function getLayerRowElements(L) {
     const id = layerRadioIdForLayer(L);
     const input = $(id);
@@ -776,6 +815,7 @@ function getLayerRowElements(L) {
         label: label
     };
 }
+/** Reorders the layer segment DOM elements to match the current mainLayerOrder. */
 function applyLayerSegOrder() {
     const seg = $("layerSeg");
     if (!seg) return;
